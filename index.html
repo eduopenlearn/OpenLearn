@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Learn - Downloads & Resources</title>
+    <link rel="icon" type="image/jpeg" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .glass-video-card {
+            background: rgba(34, 34, 68, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1.5px solid rgba(255,255,255,0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .glass-video-card:hover {
+            transform: translateY(-5px) scale(1.03);
+            box-shadow: 0 16px 40px 0 rgba(31, 38, 135, 0.25);
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .glassmorphism {
+            background: rgba(34, 34, 68, 0.92); /* More solid, dark background for navbar */
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 2px solid #764ba2;
+            box-shadow: 0 2px 12px 0 rgba(34,34,68,0.15);
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hover-scale {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hover-scale:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        }
+
+        .category-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .category-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .category-card:hover::before {
+            left: 100%;
+        }
+
+        .pulse-dot {
+            animation: pulse-dot 2s infinite;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+            color: #fff !important;
+            text-shadow: 0 1px 4px rgba(34,34,68,0.25);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .nav-link.active::after,
+        .nav-link:hover,
+        .nav-link.active {
+            color: #f093fb !important;
+        }
+        .nav-link.active::after,
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Improved select dropdown styling */
+        select,
+        select:focus {
+            background: rgba(34, 34, 68, 0.98) !important;
+            color: #fff !important;
+            border: 1.5px solid #764ba2 !important;
+            box-shadow: 0 2px 8px 0 rgba(34,34,68,0.12);
+        }
+        select option {
+            background: #222244;
+            color: #fff;
+        }
+
+        /* Chevron icon inside filter box for all screen sizes */
+        .filter-chevron {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a1a1aa;
+            pointer-events: none;
+        }
+        @media (max-width: 768px) {
+            .filter-chevron {
+                right: 1.25rem;
+                font-size: 1.25rem;
+            }
+        }
+
+        .hero-bg {
+            background: #0a0a1a;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 30% 20%, rgba(102,126,234,0.1) 0%, transparent 25%),
+                radial-gradient(circle at 70% 80%, rgba(118,75,162,0.1) 0%, transparent 25%);
+            pointer-events: none;
+        }
+
+        /* Network Animation */
+        .network-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            opacity: 0.5;
+        }
+
+        .node {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(102,126,234,0.6);
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .node::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            background: rgba(102,126,234,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: ripple 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        @keyframes ripple {
+            0% { width: 0; height: 0; opacity: 1; }
+            100% { width: 40px; height: 40px; opacity: 0; }
+        }
+
+        .connection {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(102,126,234,0.2), rgba(118,75,162,0.2));
+            animation: connect 4s ease-in-out infinite;
+            transform-origin: left center;
+        }
+
+        @keyframes connect {
+            0% { transform: scaleX(0); opacity: 0; }
+            50% { transform: scaleX(1); opacity: 1; }
+            100% { transform: scaleX(0); opacity: 0; }
+        }
+
+        /* Technology Grid Background */
+        .tech-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(102,126,234,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(102,126,234,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: grid-move 20s linear infinite;
+            opacity: 0.15;
+        }
+
+        @keyframes grid-move {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(50px); }
+        }
+
+        .stats-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Mobile Sidebar Styles */
+        .mobile-sidebar {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100vh;
+            background: rgba(34, 34, 68, 0.98);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            transition: right 0.3s ease-in-out;
+            z-index: 100;
+            padding: 1rem;
+            max-width: 300px;
+            border-left: 2px solid #764ba2;
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .mobile-sidebar.active {
+            right: 0;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .desktop-nav {
+                display: none;
+            }
+
+            .mobile-nav-link {
+                display: flex;
+                align-items: center;
+                padding: 1rem;
+                color: white;
+                border-radius: 0.75rem;
+                transition: all 0.3s ease;
+                margin-bottom: 0.5rem;
+                background: rgba(255, 255, 255, 0.05);
+            }
+
+            .mobile-nav-link:hover,
+            .mobile-nav-link.active {
+                background: rgba(255, 255, 255, 0.1);
+                transform: translateX(5px);
+            }
+
+            .mobile-nav-link i {
+                margin-right: 1rem;
+                width: 24px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen text-white">
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glassmorphism">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center space-x-4">
+                    <div class="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center floating">
+                        <i class="fas fa-user-graduate text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold gradient-text">Open Learn</h1>
+                        <p class="text-xs text-gray-300">Learn & Practice</p>
+                    </div>
+                </div>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#" class="nav-link text-sm font-medium text-white hover:text-purple-300 active" onclick="showSection('home')">
+                        <i class="fas fa-home mr-2"></i>Home
+                    </a>
+                    <a href="#" class="nav-link text-sm font-medium text-white hover:text-purple-300" onclick="showSection('notes')">
+                        <i class="fas fa-sticky-note mr-2"></i>Notes
+                    </a>
+                    <a href="#" class="nav-link text-sm font-medium text-white hover:text-purple-300" onclick="showSection('assignment')">
+                        <i class="fas fa-tasks mr-2"></i>Assignments
+                    </a>
+                    <a href="#" class="nav-link text-sm font-medium text-white hover:text-purple-300" onclick="showSection('Papers')">
+                        <i class="fas fa-file-alt mr-2"></i>Papers
+                    </a>
+                    <a href="#" class="nav-link text-sm font-medium text-white hover:text-purple-300" onclick="showSection('video')">
+                        <i class="fas fa-video mr-2"></i>Video
+                    </a>
+                </div>
+
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-300 hidden"> <span id="totalFiles" class="font-semibold text-purple-300"></span></span>
+                    <div class="pulse-dot w-3 h-3 bg-green-400 rounded-full hidden"></div>
+                    
+                    <!-- Notification Bell Icon -->
+                    <div class="relative">
+                        <button id="notificationBtn" class="relative focus:outline-none" title="New File Updates">
+                            <i class="fas fa-bell text-white text-xl"></i>
+                            <span id="notificationDot" class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-slate-900 hidden"></span>
+                        </button>
+                        <div id="notificationDropdown" class="hidden absolute right-0 mt-5 w-80 bg-black/90 backdrop-blur-lg text-white rounded-2xl shadow-2xl z-50 border border-white/10">
+                            <div class="p-4 border-b border-white/10 font-semibold text-base bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-t-2xl">Notifications</div>
+                            <ul id="notificationList" class="max-h-64 overflow-y-auto divide-y divide-white/10"></ul>
+                            <div class="p-2 text-xs text-gray-300 text-center">Click outside to close</div>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobileMenuBtn" class="mobile-menu-btn" aria-label="Toggle mobile menu">
+                        <i class="fas fa-bars text-white text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Sidebar -->
+                <div id="mobileSidebar" class="mobile-sidebar">
+                    <div class="flex items-center justify-between mb-8 p-4">
+                        <div class="flex items-center space-x-4">
+                        </div>
+                        <button id="closeMobileMenu" class="text-white hover:text-purple-300 transition-colors">
+                            <i class="fas fa-times text-2xl"></i>
+                        </button>
+                    </div>
+
+                    <nav class="flex flex-col space-y-2">
+                        <a href="#" class="mobile-nav-link active" onclick="showSection('home')">
+                            <i class="fas fa-home"></i>
+                            Home
+                        </a>
+                        <a href="#" class="mobile-nav-link" onclick="showSection('notes')">
+                            <i class="fas fa-sticky-note"></i>
+                            Notes
+                        </a>
+                        <a href="#" class="mobile-nav-link" onclick="showSection('assignment')">
+                            <i class="fas fa-tasks"></i>
+                            Assignments
+                        </a>
+                        <a href="#" class="mobile-nav-link" onclick="showSection('Papers')">
+                            <i class="fas fa-file-alt"></i>
+                            Papers
+                        </a>
+                        <a href="#" class="mobile-nav-link" onclick="showSection('video')">
+                            <i class="fas fa-video"></i>
+                            Video
+                        </a>
+                    </nav>
+
+                    <div class="absolute bottom-0 left-0 right-0 p-4 text-center text-sm text-gray-400">
+                        <p>© 2025 Open Learn</p>
+                    </div>
+                </div>
+                        <style>
+                        @media (max-width: 768px) {
+                            #notificationDropdown {
+                                position: fixed !important;
+                                width: 90vw !important;
+                                min-width: 0 !important;
+                                left: 50% !important;
+                                right: auto !important;
+                                transform: translateX(-50%) !important;
+                                margin-top: 1rem !important;
+                                border-radius: 1.25rem !important;
+                                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37) !important;
+                                padding: 0.75rem !important;
+                                top: 4rem !important;
+                            }
+                        }
+                        .notification-hover:hover {
+                            background: linear-gradient(90deg, rgba(118,75,162,0.25) 0%, rgba(102,126,234,0.25) 100%);
+                            color: #fff;
+                        }
+                        #notificationDropdown {
+                            max-height: 80vh;
+                            overflow-y: auto;
+                        }
+                        </style>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <div id="homeSection" class="section">
+        <!-- Hero Section -->
+        <section class="hero-bg pt-24 pb-16 relative">
+            <!-- Animated Technology Background -->
+            <div class="tech-grid"></div>
+            
+            <!-- Network Animation Background -->
+            <div class="network-bg">
+                <!-- Nodes and connections will be added dynamically -->
+            </div>
+
+            <script>
+                function createNetworkAnimation() {
+                    const container = document.querySelector('.network-bg');
+                    const nodeCount = 12;
+                    const connectionCount = 20;
+
+                    // Create nodes
+                    for (let i = 0; i < nodeCount; i++) {
+                        const node = document.createElement('div');
+                        node.className = 'node';
+                        node.style.left = `${Math.random() * 100}%`;
+                        node.style.top = `${Math.random() * 100}%`;
+                        node.style.animationDelay = `${Math.random() * 2}s`;
+                        container.appendChild(node);
+                    }
+
+                    // Create connections
+                    for (let i = 0; i < connectionCount; i++) {
+                        const connection = document.createElement('div');
+                        connection.className = 'connection';
+                        
+                        // Random position and dimensions
+                        const left = Math.random() * 100;
+                        const top = Math.random() * 100;
+                        const width = 50 + Math.random() * 150;
+                        const angle = Math.random() * 360;
+                        
+                        connection.style.left = `${left}%`;
+                        connection.style.top = `${top}%`;
+                        connection.style.width = `${width}px`;
+                        connection.style.transform = `rotate(${angle}deg) scaleX(0)`;
+                        connection.style.animationDelay = `${Math.random() * 4}s`;
+                        
+                        container.appendChild(connection);
+                    }
+                }
+
+                // Initialize network animation when the document is loaded
+                document.addEventListener('DOMContentLoaded', createNetworkAnimation);
+            </script>
+            
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="text-center">
+                    <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 slide-in">
+                        Smart Learning
+                        <span class="block bg-gradient-to-r from-yellow-300 to-pink-300 bg-clip-text text-transparent">
+                            Made Simple
+                        </span>
+                    </h1>
+                    <p class="text-xl md:text-2xl text-white/80 mb-12 max-w-3xl mx-auto slide-in">
+                      Open Learn offers notes, practical papers, video tutorials, and assignments for MS Office and Photoshop, helping students learn faster and practice smarter.
+                    </p>
+
+                    <!-- Website Description -->
+                    <div class="bg-white/10 backdrop-blur-md rounded-3xl p-8 max-w-4xl mx-auto mb-16 transform hover:scale-102 transition-all duration-300">
+                        <h2 class="text-3xl font-bold text-white mb-6 text-center">About Open Learn</h2>
+                        <p class="text-lg text-white/90 mb-4 leading-relaxed">
+                            Open Learn is an online learning platform designed to make IT education simple, practical, and accessible. Our main focus is to provide high-quality learning resources for MS Office and Adobe Photoshop.
+                        </p>
+                        <p class="text-lg text-white/90 mb-4 leading-relaxed">
+                            Students can access well-structured notes, step-by-step practical papers, video tutorials, and assignments to strengthen their skills and gain hands-on experience.
+                        </p>
+                        <p class="text-lg text-white/90 leading-relaxed">
+                            Whether you are a beginner or looking to sharpen your knowledge, Open Learn helps you learn at your own pace with clear guidance and real-world examples. Our goal is to prepare students with the digital skills needed for both academic and professional success.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section class="py-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-16">
+                    <h2 class="text-4xl font-bold text-white mb-4">Browse Categories</h2>
+                    <p class="text-xl text-gray-300">Discover resources organized by type</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <!-- Notes Category -->
+                    <div class="category-card bg-gradient-to-br from-green-600 to-teal-600 rounded-3xl p-8 text-center hover-scale cursor-pointer" onclick="showSection('notes')">
+                        <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-sticky-note text-4xl text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-4">Study Notes</h3>
+                        <p class="text-white/80 mb-6">study materials</p>
+                        <div class="bg-white/20 rounded-xl px-4 py-2 text-sm font-semibold" id="notesCount">Not Found</div>
+                    </div>
+
+                    <!-- Papers Category -->
+                    <div class="category-card bg-gradient-to-br from-orange-600 to-red-600 rounded-3xl p-8 text-center hover-scale cursor-pointer" onclick="showSection('Papers')">
+                        <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-file-alt text-4xl text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-4">Practical Papers</h3>
+                        <p class="text-white/80 mb-6">Daily practice papers</p>
+                        <div class="bg-white/20 rounded-xl px-4 py-2 text-sm font-semibold" id="PapersCount">0 Papers</div>
+                    </div>
+
+                    <!-- Assignment Category -->
+                    <div class="category-card bg-gradient-to-br from-blue-600 to-cyan-600 rounded-3xl p-8 text-center hover-scale cursor-pointer" onclick="showSection('assignment')">
+                        <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-tasks text-4xl text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-4">Assignments</h3>
+                        <p class="text-white/80 mb-6">Assignments Papers</p>
+                        <div class="bg-white/20 rounded-xl px-4 py-2 text-sm font-semibold" id="assignmentCount">0 Assignments</div>
+                    </div>
+
+                    <!-- Video Category -->
+                    <div class="category-card bg-gradient-to-br from-pink-600 to-rose-600 rounded-3xl p-8 text-center hover-scale cursor-pointer" onclick="showSection('video')">
+                        <div class="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                            <i class="fas fa-video text-4xl text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-white mb-4">Video Tutorials</h3>
+                        <p class="text-white/80 mb-6">Educational video content</p>
+                        <div class="bg-white/20 rounded-xl px-4 py-2 text-sm font-semibold" id="videoCount">0 Videos</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Video Section -->
+    <div id="videoSection" class="section hidden pt-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center mb-12">
+                <h2 class="text-4xl font-bold gradient-text mb-4">Video Library</h2>
+                <p class="text-xl text-gray-300">Search and filter educational, motivational, and documentary videos</p>
+            </div>
+            <!-- Search and Filter for Videos -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 mb-8 border border-white/20">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            id="videoSearch" 
+                            type="text" 
+                            placeholder="Search video by name..." 
+                            class="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200 text-white placeholder-gray-400"
+                        />
+                    </div>
+                    <div class="relative">
+                        <select 
+                            id="videoCategory" 
+                            class="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-white min-w-[16rem] appearance-none cursor-pointer"
+                        >
+                            <option value="">All Categories</option>
+                        </select>
+                        <i class="fas fa-chevron-down filter-chevron"></i>
+                    </div>
+                </div>
+            </div>
+            <div id="videoCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="videoNoResults" class="text-center py-12 hidden">
+                <i class="fas fa-video text-6xl text-gray-600 mb-4"></i>
+                <h3 class="text-2xl font-semibold text-gray-400 mb-2">No videos found</h3>
+                <p class="text-gray-500">Try adjusting your search terms</p>
+            </div>
+        </div>
+    </div>
+    <script src="video-card-generator.js"></script>
+    <script src="main.js"></script>
+
+    <!-- Notes Section -->
+    <div id="notesSection" class="section hidden pt-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold gradient-text mb-4">Study Notes</h1>
+                <p class="text-xl text-gray-300">Comprehensive study materials and notes</p>
+            </div>
+            <!-- Search and Filter for Notes -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 mb-8 border border-white/20">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            id="notesSearchInput" 
+                            placeholder="Search notes..."
+                            class="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200 text-white placeholder-gray-400"
+                        >
+                    </div>
+                    <div class="relative">
+                        <select 
+                            id="courseCategoryFilterNotes" 
+                            class="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-white min-w-[16rem] appearance-none cursor-pointer"
+                        >
+                            <option value="all">All Course Categories</option>
+                            <option value="Word">Microsoft Word</option>
+                            <option value="Excel">Microsoft Excel</option>
+                            <option value="PowerPoint">Microsoft PowerPoint</option>
+                            <option value="Access">Microsoft Access</option>
+                            <option value="Photoshop">Photoshop</option>
+                        </select>
+                        <i class="fas fa-chevron-down filter-chevron"></i>
+                    </div>
+                    <div class="relative">
+                        <select 
+                            id="notesFilterSelect" 
+                            class="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-white min-w-[16rem] appearance-none cursor-pointer"
+                        >
+                            <option value="latest">Latest Notes</option>
+                            <option value="popular">Most Downloaded</option>
+                            <option value="title">Alphabetical</option>
+                            <option value="author">By Author</option>
+                        </select>
+                        <i class="fas fa-chevron-down filter-chevron"></i>
+                    </div>
+                </div>
+            </div>
+            <div id="notesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            <div id="notesNoResults" class="text-center py-12 hidden">
+                <i class="fas fa-sticky-note text-6xl text-gray-600 mb-4"></i>
+                <h3 class="text-2xl font-semibold text-gray-400 mb-2">No notes found</h3>
+                <p class="text-gray-500">Try adjusting your search terms</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Section -->
+    <div id="assignmentSection" class="section hidden pt-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold gradient-text mb-4">Assignments</h1>
+                <p class="text-xl text-gray-300">All uploaded assignments and coursework</p>
+            </div>
+            <!-- Search and Filter for Assignments -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 mb-8 border border-white/20">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            id="assignmentSearchInput" 
+                            placeholder="Search assignments..."
+                            class="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200 text-white placeholder-gray-400"
+                        >
+                    </div>
+                    <div class="relative">
+                        <select 
+                            id="courseCategoryFilterAssignment" 
+                            class="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-white min-w-[16rem] appearance-none cursor-pointer"
+                        >
+                            <option value="all">All Course Categories</option>
+                            <option value="Word">Microsoft Word</option>
+                            <option value="Excel">Microsoft Excel</option>
+                            <option value="PowerPoint">Microsoft PowerPoint</option>
+                            <option value="Access">Microsoft Access</option>
+                            <option value="Photoshop">Photoshop</option>
+                        </select>
+                        <i class="fas fa-chevron-down filter-chevron"></i>
+                    </div>
+                    <div class="relative">
+                        <select 
+                            id="assignmentFilterSelect" 
+                            class="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-white min-w-[16rem] appearance-none cursor-pointer"
+                        >
+                            <option value="latest">Latest Assignments</option>
+                            <option value="popular">Most Downloaded</option>
+                            <option value="title">Alphabetical</option>
+                            <option value="author">By Author</option>
+                        </select>
+                        <i class="fas fa-chevron-down filter-chevron"></i>
+                    </div>
+                </div>
+            </div>
+            <div id="assignmentGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            <div id="assignmentNoResults" class="text-center py-12 hidden">
+                <i class="fas fa-tasks text-6xl text-gray-600 mb-4"></i>
+                <h3 class="text-2xl font-semibold text-gray-400 mb-2">No assignments found</h3>
+                <p class="text-gray-500">Try adjusting your search terms</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Papers Section -->
+    <div id="PapersSection" class="section hidden pt-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold gradient-text mb-4">Practical Papers</h1>
+                <p class="text-xl text-gray-300">Access well-structured practical papers to test your knowledge and improve hands-on skills in MS Office and Photoshop.</p>
+            </div>
+
+            <!-- Search and Filter for Papers -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 mb-8 border border-white/20">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            id="PapersSearchInput" 
+                            placeholder="Search Papers..."
+                            class="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200 text-white placeholder-gray-400"
+                        >
+                    </div>
+                    <div class="relative">
+                        <select 
+                            id="courseCategoryFilterPapers" 
+                            class="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-white min-w-[16rem] appearance-none cursor-pointer"
+                        >
+                            <option value="all">All Course Categories</option>
+                            <option value="Word">Microsoft Word</option>
+                            <option value="Excel">Microsoft Excel</option>
+                            <option value="PowerPoint">Microsoft PowerPoint</option>
+                            <option value="Access">Microsoft Access</option>
+                            <option value="Photoshop">Photoshop</option>
+                        </select>
+                        <i class="fas fa-chevron-down filter-chevron"></i>
+                    </div>
+                    <div class="relative">
+                        <select 
+                            id="PapersFilterSelect" 
+                            class="px-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-white min-w-[16rem] appearance-none cursor-pointer"
+                        >
+                            <option value="latest">Latest Papers</option>
+                            <option value="popular">Most Downloaded</option>
+                            <option value="title">Alphabetical</option>
+                            <option value="author">By Author</option>
+                        </select>
+                        <i class="fas fa-chevron-down filter-chevron"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div id="PapersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+            <div id="PapersNoResults" class="text-center py-12 hidden">
+                <i class="fas fa-file-alt text-6xl text-gray-600 mb-4"></i>
+                <h3 class="text-2xl font-semibold text-gray-400 mb-2">No Papers found</h3>
+                <p class="text-gray-500">Try adjusting your search terms</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 flex items-center justify-center">
+        <div class="bg-white/10 backdrop-blur-lg rounded-3xl p-8 text-center border border-white/20">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-purple-400 mx-auto mb-4"></div>
+            <span class="text-white text-lg">Loading amazing content...</span>
+        </div>
+    </div>
+
+
+    <!-- Footer -->
+    <footer class="bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 border-t border-white/10 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Site Info -->
+                <div class="text-center md:text-left">
+                    <div class="flex items-center justify-center md:justify-start space-x-3 mb-4">
+                        <div class="w-10 h-10 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl flex items-center justify-center floating">
+                             <i class="fas fa-user-graduate text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold gradient-text">Open Learn</h3>
+                            <p class="text-xs text-gray-400">Learn & Practice</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-300 text-sm leading-relaxed">
+                       Open Learn – Your one-stop hub for MS Office & Photoshop learning.
+                       Explore notes, tutorials, assignments, and practical papers designed to help you learn smarter and faster.
+                    </p>
+                </div>
+
+                <!-- Course Information -->
+                <div class="text-center">
+                    <h4 class="text-lg font-semibold text-white mb-4">Course Work</h4>
+                    <div class="space-y-3">
+                        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/10">
+                            <div class="flex items-center justify-center space-x-3 mb-2">
+                                <i class="fas fa-file-word text-blue-400 text-xl"></i>
+                                <span class="text-white font-medium">MS Office</span>
+                            </div>
+                            <p class="text-gray-400 text-sm">Word, Excel, PowerPoint & Access</p>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-4 border border-white/10">
+                            <div class="flex items-center justify-center space-x-3 mb-2">
+                                <i class="fas fa-paint-brush text-pink-400 text-xl"></i>
+                                <span class="text-white font-medium">Photoshop</span>
+                            </div>
+                            <p class="text-gray-400 text-sm">Photo Editing & Design</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="text-center md:text-right">
+                    <h4 class="text-lg font-semibold text-white mb-4">Site Owner</h4>
+                    <div class="space-y-4">
+                        <div class="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-lg rounded-2xl p-6 border border-purple-400/30">
+                            <div class="mb-3">
+                                <h5 class="text-xl font-bold text-white mb-1">Muditha Kaushalya</h5>
+                                <p class="text-purple-300 text-sm">Course Creator & Developer</p>
+                            </div>
+                            
+                            <div class="flex items-center justify-center md:justify-end space-x-2 mb-3">
+                                <i class="fas fa-envelope text-blue-400"></i>
+                                <a href="mailto:eopenlearn@gmail.com" 
+                                   class="text-gray-300 hover:text-white transition-colors duration-200 text-sm break-all">
+                                   eopenlearn@gmail.com
+                                </a>
+                            </div>
+
+                            <div class="flex items-center justify-center md:justify-end space-x-4">
+                                <button onclick="window.location.href='mailto:eopenlearn@gmail.com'" 
+                                        class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 transform hover:scale-105 flex items-center space-x-2">
+                                    <i class="fas fa-paper-plane"></i>
+                                    <span>Contact</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="border-t border-white/10 mt-8 pt-6">
+                <div class="flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
+                    <div class="flex items-center space-x-6">
+                        <p class="text-gray-400 text-sm">
+                            © 2025 Open Learn. All rights reserved.
+                        </p>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="text-green-400 text-xs">Online</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center space-x-6">
+                        <div class="flex items-center space-x-4 text-gray-400 text-sm">
+                            <span>Built with</span>
+                            <i class="fas fa-heart text-red-400 animate-pulse"></i>
+                            <span>for education</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fab fa-html5 text-orange-400"></i>
+                            <i class="fab fa-css3-alt text-blue-400"></i>
+                            <i class="fab fa-js-square text-yellow-400"></i>
+                            <i class="fab fa-google text-green-400"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

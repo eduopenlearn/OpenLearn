@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Student Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 to-purple-900">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-shield-alt text-white text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">Admin Login</h2>
+                <p class="text-gray-600 mt-2">Access the file management dashboard</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                    <input type="email" id="loginEmail" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                    <input type="password" id="loginPassword" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                </div>
+                
+                <button type="submit" id="loginBtn"
+                        class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    Sign In
+                </button>
+                
+                <div id="loginError" class="hidden text-red-600 text-sm text-center bg-red-50 p-3 rounded-lg"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden">
+        <!-- Header -->
+        <header class="bg-white shadow-lg border-b">
+            <div class="flex items-center justify-between px-6 py-4">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-shield-alt text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold text-gray-900">Admin Dashboard</h1>
+                        <p class="text-xs text-gray-500">File Management System</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="adminEmail" class="text-sm text-gray-600"></span>
+                    <button id="logoutBtn" class="text-red-600 hover:text-red-700 text-sm font-medium">
+                        <i class="fas fa-sign-out-alt mr-1"></i>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex">
+            <!-- Sidebar -->
+            <aside class="bg-white shadow-lg w-64 min-h-screen border-r">
+                <nav class="p-6">
+                    <ul class="space-y-2">
+                        <li>
+                            <button onclick="showSection('overview')" id="overviewTab" class="sidebar-btn sidebar-btn-active w-full text-left px-4 py-3 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-chart-bar mr-3"></i>
+                                Overview
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="showSection('upload')" id="uploadTab" class="sidebar-btn w-full text-left px-4 py-3 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-cloud-upload-alt mr-3"></i>
+                                Upload File
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="showSection('manage')" id="manageTab" class="sidebar-btn w-full text-left px-4 py-3 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-folder-open mr-3"></i>
+                                Manage Files
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="showSection('settings')" id="settingsTab" class="sidebar-btn w-full text-left px-4 py-3 rounded-lg transition-colors duration-200">
+                                <i class="fas fa-cog mr-3"></i>
+                                Settings
+                            </button>
+                        </li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6">
+                <!-- Overview Section -->
+                <div id="overviewSection" class="section">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Dashboard Overview</h2>
+                        <p class="text-gray-600">Manage and monitor your Student Portal</p>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white rounded-2xl shadow-lg p-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-file-alt text-blue-600 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-semibold text-gray-900">Total Files</h3>
+                                    <p id="totalFilesCount" class="text-2xl font-bold text-blue-600">0</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-lg p-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-download text-green-600 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-semibold text-gray-900">Total Downloads</h3>
+                                    <p id="totalDownloadsCount" class="text-2xl font-bold text-green-600">0</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-lg p-6">
+                            <div class="flex items-center">
+                                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-calendar text-purple-600 text-xl"></i>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-semibold text-gray-900">This Month</h3>
+                                    <p id="monthlyFilesCount" class="text-2xl font-bold text-purple-600">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Files -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Files</h3>
+                        <div id="recentFilesList" class="space-y-3">
+                            <!-- Recent files will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Section -->
+                <div id="uploadSection" class="section hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Upload New File</h2>
+                        <p class="text-gray-600">Add a new file to the portal</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <form id="uploadForm" class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">File Title *</label>
+                                    <input type="text" id="fileTitle" required
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Author</label>
+                                    <input type="text" id="fileAuthor" value="Muditha Kaushalya"
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                </div>
+                            </div>
+
+                            <!-- Download Link Input -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Google Drive Direct Link *</label>
+                                <input type="url" id="fileLink" required placeholder="https://drive.google.com/uc?id=..."
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                <p class="text-xs text-gray-500 mt-1">Make sure the file is publicly accessible</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                                <select id="fileCategory" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                    <option value="Papers">Papers</option>
+                                    <option value="Notes">Notes</option>
+                                    <option value="Projects">Projects</option>
+                                    <option value="Documentation">Documentation</option>
+                                    <option value="Assignment">Assignment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Course Category</label>
+                                <select id="courseCategory" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                    <option value="Word">Microsoft Word</option>
+                                    <option value="Excel">Microsoft Excel</option>
+                                    <option value="PowerPoint">Microsoft PowerPoint</option>
+                                    <option value="Access">Microsoft Access</option>
+                                    <option value="Photoshop">Photoshop</option>
+                                </select>
+                            </div>
+
+                            <div class="flex justify-end space-x-3">
+                                <button type="button" onclick="resetForm()" 
+                                        class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                    Reset
+                                </button>
+                                <button type="submit" id="uploadBtn"
+                                        class="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-200">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Add File
+                                </button>
+                            </div>
+                        </form>
+
+                        <div id="uploadSuccess" class="hidden mt-4 p-4 bg-green-50 text-green-800 rounded-lg">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            File uploaded successfully!
+                        </div>
+                        
+                        <div id="uploadError" class="hidden mt-4 p-4 bg-red-50 text-red-800 rounded-lg"></div>
+                    </div>
+                </div>
+
+                <!-- Manage Files Section -->
+                <div id="manageSection" class="section hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Manage Files</h2>
+                        <p class="text-gray-600">Edit or delete existing files</p>
+                    </div>
+
+                    <!-- Search and Filter -->
+                    <div class="bg-white rounded-2xl shadow-lg p-4 mb-6">
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <div class="flex-1">
+                                <input type="text" id="adminSearchInput" placeholder="Search files..."
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                            </div>
+                            <div>
+                                <select id="adminFilterSelect" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                    <option value="Papers">Papers</option>
+                                    <option value="Notes">Notes</option>
+                                    <option value="Projects">Projects</option>
+                                    <option value="Documentation">Documentation</option>
+                                    <option value="Assignment">Assignment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Files Table -->
+                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 border-b">
+                                    <tr>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">File</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Downloads</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="filesTableBody" class="bg-white divide-y divide-gray-200">
+                                    <!-- Files will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div id="noFilesMessage" class="text-center py-12 hidden">
+                            <i class="fas fa-folder-open text-4xl text-gray-300 mb-4"></i>
+                            <p class="text-gray-500">No files found</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div id="settingsSection" class="section hidden">
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 mb-2">Settings</h2>
+                        <p class="text-gray-600">Configure your admin preferences</p>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-lg p-6">
+                        <div class="space-y-6">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                                        <input type="email" id="adminEmailSettings" readonly
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                                        <input type="text" value="Administrator" readonly
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border-t pt-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-4">Portal Settings</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Default Author Name</label>
+                                        <input type="text" id="defaultAuthor" value="Muditha Kaushalya"
+                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                    </div>
+                                    <div>
+                                        <button onclick="saveSettings()" 
+                                                class="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-200">
+                                            <i class="fas fa-save mr-2"></i>
+                                            Save Settings
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Edit File Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl w-full max-w-2xl">
+                <div class="flex items-center justify-between p-6 border-b">
+                    <h3 class="text-lg font-semibold">Edit File</h3>
+                    <button id="closeEditModal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="p-6">
+                    <form id="editForm" class="space-y-4">
+                        <input type="hidden" id="editFileId">
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                            <input type="text" id="editTitle" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Author</label>
+                            <input type="text" id="editAuthor"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Download Link</label>
+                            <input type="url" id="editLink" required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                            <select id="editCategory" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none">
+                                    <option value="Papers">Papers</option>
+                                    <option value="Notes">Notes</option>
+                                    <option value="Projects">Projects</option>
+                                    <option value="Documentation">Documentation</option>
+                                    <option value="Assignment">Assignment</option>
+                                    <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3 pt-4">
+                            <button type="button" onclick="closeEditModal()" 
+                                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                                Cancel
+                            </button>
+                            <button type="submit" 
+                                    class="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all duration-200">
+                                <i class="fas fa-save mr-2"></i>
+                                Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase Configuration and JavaScript -->
+    <script>
+        // Firebase Configuration (Replace with your config)
+        const firebaseConfig = {
+        apiKey: "AIzaSyB_QRk_FozjBq6pOz114w8dsXvizs8dJ7U",
+        authDomain: "open-learn-edu.firebaseapp.com",
+        projectId: "open-learn-edu",
+        storageBucket: "open-learn-edu.firebasestorage.app",
+        messagingSenderId: "366212148278",
+        appId: "1:366212148278:web:2bd66dee1fa9fe65267c97",
+        measurementId: "G-KR8VP936VS"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Global variables
+        let currentUser = null;
+        let allFiles = [];
+        let filteredAdminFiles = [];
+
+        // DOM Elements
+        const loginScreen = document.getElementById('loginScreen');
+        const dashboard = document.getElementById('dashboard');
+        const loginForm = document.getElementById('loginForm');
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const loginError = document.getElementById('loginError');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const adminEmail = document.getElementById('adminEmail');
+
+        // Section elements
+        const sections = {
+            overview: document.getElementById('overviewSection'),
+            upload: document.getElementById('uploadSection'),
+            manage: document.getElementById('manageSection'),
+            settings: document.getElementById('settingsSection')
+        };
+
+        // Tab elements
+        const tabs = {
+            overview: document.getElementById('overviewTab'),
+            upload: document.getElementById('uploadTab'),
+            manage: document.getElementById('manageTab'),
+            settings: document.getElementById('settingsTab')
+        };
+
+        // Forms and other elements
+        const uploadForm = document.getElementById('uploadForm');
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        const filesTableBody = document.getElementById('filesTableBody');
+        const adminSearchInput = document.getElementById('adminSearchInput');
+        const adminFilterSelect = document.getElementById('adminFilterSelect');
+
+        // Authentication State Observer
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                adminEmail.textContent = user.email;
+                document.getElementById('adminEmailSettings').value = user.email;
+                showDashboard();
+                loadDashboardData();
+            } else {
+                showLogin();
+            }
+        });
+
+        // Show/Hide screens
+        function showLogin() {
+            loginScreen.classList.remove('hidden');
+            dashboard.classList.add('hidden');
+        }
+
+        function showDashboard() {
+            loginScreen.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+            showSection('overview');
+        }
+
+        // Login functionality
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            loginError.classList.add('hidden');
+
+            try {
+                await auth.signInWithEmailAndPassword(loginEmail.value, loginPassword.value);
+            } catch (error) {
+                loginError.textContent = error.message;
+                loginError.classList.remove('hidden');
+            }
+        });
+
+        // Logout functionality
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        // Section Navigation
+        function showSection(sectionName) {
+            // Hide all sections
+            Object.values(sections).forEach(section => {
+                section.classList.add('hidden');
+            });
+
+            // Remove active class from all tabs
+            Object.values(tabs).forEach(tab => {
+                tab.classList.remove('sidebar-btn-active');
+                tab.classList.add('sidebar-btn');
+            });
+
+            // Show selected section
+            sections[sectionName].classList.remove('hidden');
+            tabs[sectionName].classList.add('sidebar-btn-active');
+            tabs[sectionName].classList.remove('sidebar-btn');
+
+            // Load section-specific data
+            if (sectionName === 'manage') {
+                loadFilesForManagement();
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            try {
+                const filesSnapshot = await db.collection('files').get();
+                allFiles = [];
+                let totalDownloads = 0;
+                let monthlyFiles = 0;
+                const currentMonth = new Date().getMonth();
+
+                filesSnapshot.forEach(doc => {
+                    const fileData = { id: doc.id, ...doc.data() };
+                    allFiles.push(fileData);
+                    totalDownloads += fileData.downloads || 0;
+                    
+                    if (fileData.uploadDate && new Date(fileData.uploadDate).getMonth() === currentMonth) {
+                        monthlyFiles++;
+                    }
+                });
+
+                // Update stats
+                document.getElementById('totalFilesCount').textContent = allFiles.length;
+                document.getElementById('totalDownloadsCount').textContent = totalDownloads;
+                document.getElementById('monthlyFilesCount').textContent = monthlyFiles;
+
+                // Update recent files
+                const recentFiles = allFiles
+                    .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate))
+                    .slice(0, 5);
+
+                const recentFilesList = document.getElementById('recentFilesList');
+                recentFilesList.innerHTML = recentFiles.map(file => `
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="font-medium text-gray-900">${file.title}</p>
+                            <p class="text-sm text-gray-500">${file.author} • ${new Date(file.uploadDate).toLocaleDateString()}</p>
+                        </div>
+                        <span class="text-sm text-gray-600">${file.downloads || 0} downloads</span>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        // Upload file functionality
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadSuccess = document.getElementById('uploadSuccess');
+            const uploadError = document.getElementById('uploadError');
+            
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Uploading...';
+            uploadBtn.disabled = true;
+            uploadSuccess.classList.add('hidden');
+            uploadError.classList.add('hidden');
+
+            try {
+                const fileData = {
+                    title: document.getElementById('fileTitle').value,
+                    author: document.getElementById('fileAuthor').value || 'Muditha Kaushalya',
+                    downloadLink: document.getElementById('fileLink').value,
+                    category: document.getElementById('fileCategory').value,
+                    courseCategory: document.getElementById('courseCategory').value,
+                    uploadDate: new Date().toISOString(),
+                    downloads: 0
+                };
+
+                await db.collection('files').add(fileData);
+                
+                uploadSuccess.classList.remove('hidden');
+                resetForm();
+                loadDashboardData();
+                
+            } catch (error) {
+                uploadError.textContent = 'Error uploading file: ' + error.message;
+                uploadError.classList.remove('hidden');
+            } finally {
+                uploadBtn.innerHTML = '<i class="fas fa-plus mr-2"></i>Add File';
+                uploadBtn.disabled = false;
+            }
+        });
+
+        // Reset upload form
+        function resetForm() {
+            uploadForm.reset();
+            document.getElementById('fileAuthor').value = 'Muditha Kaushalya';
+        }
+
+        // Load files for management
+        async function loadFilesForManagement() {
+            try {
+                const filesSnapshot = await db.collection('files').get();
+                allFiles = [];
+                
+                filesSnapshot.forEach(doc => {
+                    allFiles.push({ id: doc.id, ...doc.data() });
+                });
+
+                filteredAdminFiles = [...allFiles];
+                renderFilesTable();
+                
+            } catch (error) {
+                console.error('Error loading files:', error);
+            }
+        }
+
+        // Apply admin search and filter
+        function applyAdminFilter() {
+            const searchTerm = adminSearchInput.value.toLowerCase().trim();
+            const filterCategory = adminFilterSelect.value;
+
+            filteredAdminFiles = allFiles.filter(file => {
+                const matchesSearch = file.title?.toLowerCase().includes(searchTerm) ||
+                                    file.author?.toLowerCase().includes(searchTerm);
+                const matchesCategory = filterCategory === 'all' || file.category === filterCategory;
+                
+                return matchesSearch && matchesCategory;
+            });
+
+            renderFilesTable();
+        }
+
+        // Render files table
+        function renderFilesTable() {
+            const tbody = document.getElementById('filesTableBody');
+            const noFilesMessage = document.getElementById('noFilesMessage');
+
+            if (filteredAdminFiles.length === 0) {
+                tbody.innerHTML = '';
+                noFilesMessage.classList.remove('hidden');
+                return;
+            }
+
+            noFilesMessage.classList.add('hidden');
+
+            tbody.innerHTML = filteredAdminFiles.map(file => {
+                const uploadDate = file.uploadDate ? new Date(file.uploadDate).toLocaleDateString() : 'N/A';
+                return `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div>
+                                <p class="font-medium text-gray-900">${file.title}</p>
+                                <p class="text-sm text-gray-500 truncate max-w-xs">${file.downloadLink}</p>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${file.author}</td>
+                        <td class="px-6 py-4">
+                            <span class="inline-block px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-full">
+                                ${file.category}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${uploadDate}</td>
+                        <td class="px-6 py-4 text-sm text-gray-900">${file.downloads || 0}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex space-x-2">
+                                <button onclick="editFile('${file.id}')" 
+                                        class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                    <i class="fas fa-edit mr-1"></i>Edit
+                                </button>
+                                <button onclick="deleteFile('${file.id}', '${file.title}')" 
+                                        class="text-red-600 hover:text-red-700 text-sm font-medium">
+                                    <i class="fas fa-trash mr-1"></i>Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Edit file
+        function editFile(fileId) {
+            const file = allFiles.find(f => f.id === fileId);
+            if (!file) return;
+
+            document.getElementById('editFileId').value = fileId;
+            document.getElementById('editTitle').value = file.title;
+            document.getElementById('editAuthor').value = file.author;
+            document.getElementById('editLink').value = file.downloadLink;
+            document.getElementById('editCategory').value = file.category;
+
+            editModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        // Close edit modal
+        function closeEditModal() {
+            editModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Edit form submission
+        editForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fileId = document.getElementById('editFileId').value;
+            const updatedData = {
+                title: document.getElementById('editTitle').value,
+                author: document.getElementById('editAuthor').value,
+                downloadLink: document.getElementById('editLink').value,
+                category: document.getElementById('editCategory').value
+            };
+
+            try {
+                await db.collection('files').doc(fileId).update(updatedData);
+                closeEditModal();
+                loadFilesForManagement();
+                loadDashboardData();
+            } catch (error) {
+                alert('Error updating file: ' + error.message);
+            }
+        });
+
+        // Delete file
+        async function deleteFile(fileId, fileName) {
+            if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
+                try {
+                    await db.collection('files').doc(fileId).delete();
+                    loadFilesForManagement();
+                    loadDashboardData();
+                } catch (error) {
+                    alert('Error deleting file: ' + error.message);
+                }
+            }
+        }
+
+        // Save settings
+        function saveSettings() {
+            const defaultAuthor = document.getElementById('defaultAuthor').value;
+            // Save to localStorage for now (you can extend this to save to Firestore)
+            localStorage.setItem('defaultAuthor', defaultAuthor);
+            alert('Settings saved successfully!');
+        }
+
+        // Event listeners
+        adminSearchInput.addEventListener('input', applyAdminFilter);
+        adminFilterSelect.addEventListener('change', applyAdminFilter);
+        
+        document.getElementById('closeEditModal').addEventListener('click', closeEditModal);
+        
+        // Close modal on outside click
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) {
+                closeEditModal();
+            }
+        });
+
+        // Load saved settings
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedAuthor = localStorage.getItem('defaultAuthor');
+            if (savedAuthor) {
+                document.getElementById('defaultAuthor').value = savedAuthor;
+                document.getElementById('fileAuthor').value = savedAuthor;
+            }
+        });
+    </script>
+
+    <!-- Custom CSS -->
+    <style>
+        .sidebar-btn {
+            @apply text-gray-600 hover:text-blue-600 hover:bg-blue-50;
+        }
+        
+        .sidebar-btn-active {
+            @apply text-blue-600 bg-blue-50 font-semibold;
+        }
+        
+        .section {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</body>
+</html>
