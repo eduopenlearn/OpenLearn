@@ -1,6 +1,8 @@
 // Separate arrays for each category
 const wordVideos = [
     { name: "Basic Document Skills", category: "Microsoft Word", url: "https://www.youtube.com/embed/9nXTVvLDRg4?si=WmnjYaSxmFZTwtdp" },
+    { name: "Text Formatting", category: "Microsoft Word", url: "https://www.youtube.com/embed/ti3yHf0ar-I?si=I5Rhbh1d31vRArzN" },
+
 
 ];
 const excelVideos = [
