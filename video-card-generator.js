@@ -1,6 +1,6 @@
 // Separate arrays for each category
 const wordVideos = [
-    { name: "Basic Document Skills", category: "Microsoft Word", url: "https://www.youtube.com/embed/9nXTVvLDRg4?si=WmnjYaSxmFZTwtdp" }
+    { name: "Basic Document Skills", category: "Microsoft Word", url: "https://www.youtube.com/embed/9nXTVvLDRg4?si=WmnjYaSxmFZTwtdp" },
 ];
 const excelVideos = [
     //{ name: "Excel for Beginners", category: "Microsoft Excel", url: "https://www.youtube.com/embed/GEZhD3J89ZE" }
@@ -76,4 +76,5 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('videoSearch').addEventListener('input', filterVideos);
     document.getElementById('videoCategory').addEventListener('change', filterVideos);
 });
+
 
