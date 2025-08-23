@@ -212,7 +212,15 @@ function renderFilesGrid(files, container) {
     // Always recalculate 'NEW' status for every render
     const now = Date.now();
     const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-    container.innerHTML = files.map(file => {
+    
+    // Sort files by upload date (most recent first)
+    const sortedFiles = [...files].sort((a, b) => {
+        const dateA = a.uploadDate ? new Date(a.uploadDate).getTime() : 0;
+        const dateB = b.uploadDate ? new Date(b.uploadDate).getTime() : 0;
+        return dateB - dateA;
+    });
+    
+    container.innerHTML = sortedFiles.map(file => {
         const uploadDate = file.uploadDate ? new Date(file.uploadDate).toLocaleDateString() : 'N/A';
         const fileType = getFileType(file.downloadLink || '');
         // Choose icon and gradient by courseCategory if present, else fallback to fileType
