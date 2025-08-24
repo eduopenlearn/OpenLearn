@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Open Learn - Student Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" type="image/x-icon" href="student.png">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Responsive base styles */
+        @media (max-width: 640px) {
+            html {
+                font-size: 14px;
+            }
+            
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+        }
+
+        /* Improved touch targets for mobile */
+        @media (max-width: 640px) {
+            button, 
+            input,
+            select {
+                min-height: 44px; /* Better touch targets */
+            }
+            
+            .mobile-full {
+                width: 100% !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+        }
+
+        /* Custom animations and transitions */
+        .fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .slide-up {
+            animation: slideUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Enhanced Card Styles */
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-hover::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card-hover:hover::before {
+            opacity: 1;
+        }
+        
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .card-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-actions {
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(229, 231, 235, 0.5);
+        }
+
+        /* Responsive grid system */
+        @media (min-width: 640px) {
+            .submissions-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .submissions-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        /* Modern gradient backgrounds */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .gradient-bg-2 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .gradient-bg-3 {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            border: 3px solid rgba(59, 130, 246, 0.1);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Custom input styles */
+        .modern-input {
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .modern-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Status badges */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        
+        .status-completed {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        /* Modern buttons */
+        .btn-modern {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-modern:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-modern:hover::before {
+            left: 100%;
+        }
+        
+        /* Subtle animations */
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="fixed inset-0 glass-effect flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="spinner mx-auto mb-6"></div>
+            <div class="space-y-2">
+                <h3 class="text-lg font-semibold text-gray-800">Loading your portal</h3>
+                <p class="text-gray-600 text-sm">Please wait a moment...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Page -->
+    <div id="loginPage" class="hidden min-h-screen flex items-center justify-center py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full mx-auto">
+            <!-- Logo/Header -->
+            <div class="text-center mb-8 sm:mb-12 float">
+                <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl mx-auto mb-4 sm:mb-6 flex items-center justify-center">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">Welcome Back</h2>
+                <p class="text-gray-600 text-base sm:text-lg">Sign in to your student portal</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="bg-white/70 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl p-6 sm:p-8 border border-white/20">
+                <form class="space-y-6" id="loginForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="email" class="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                            <input id="email" name="email" type="email" required 
+                                   class="modern-input w-full px-4 py-3 sm:py-3 bg-white/80 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none text-gray-900 placeholder-gray-500 text-base" 
+                                   placeholder="Enter your email"
+                                   autocomplete="email"
+                                   inputmode="email">
+                        </div>
+                        <div>
+                            <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">Password</label>
+                            <input id="password" name="password" type="password" required 
+                                   class="modern-input w-full px-4 py-3 sm:py-3 bg-white/80 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none text-gray-900 placeholder-gray-500 text-base" 
+                                   placeholder="Enter your password"
+                                   autocomplete="current-password">
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center justify-end mb-4">
+                        <button type="button" id="forgotPasswordBtn" class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                            Forgot password?
+                        </button>
+                    </div>
+
+                    <div id="loginError" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"></div>
+                    
+                    <button type="submit" 
+                            class="btn-modern w-full flex justify-center py-4 px-4 border border-transparent text-base font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <span>Sign In</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="forgotPasswordModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-md border border-white/20 overflow-hidden">
+            <div class="p-8">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Forgot Password</h3>
+                    <p class="text-gray-600">Enter your email to receive a password reset link</p>
+                </div>
+                
+                <form id="forgotPasswordForm" class="space-y-6">
+                    <div>
+                        <input type="email" id="resetEmail" name="resetEmail" required 
+                            placeholder="Enter your email address"
+                            class="modern-input block w-full px-4 py-3 bg-white/60 border border-gray-300 rounded-xl shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div id="forgotPasswordError" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"></div>
+                    
+                    <div class="text-sm text-gray-600 bg-blue-50 p-4 rounded-xl">
+                        <p>📧 Please note: The password reset link will be sent to your email. If you don't see it in your inbox, please check your spam/junk folder.</p>
+                    </div>
+
+                    <div class="flex space-x-4">
+                        <button type="submit" 
+                                class="btn-modern flex-1 flex justify-center py-3 px-4 border border-transparent text-base font-semibold rounded-xl text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Send Reset Link
+                        </button>
+                        <button type="button" id="cancelForgotPassword"
+                                class="btn-modern flex-1 py-3 px-4 border border-gray-300 text-base font-semibold rounded-xl text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden fade-in">
+        <!-- Modern Navigation -->
+        <nav class="bg-white/80 backdrop-blur-lg shadow-sm border-b border-gray-100 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253z"></path>
+                            </svg>
+                        </div>
+                        <h1 class="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                            Student Portal
+                        </h1>
+                    </div>
+
+                    <!-- Mobile menu button -->
+                    <div class="flex md:hidden">
+                        <button id="mobileMenuBtn" class="p-2 rounded-lg text-gray-600 hover:text-blue-600 hover:bg-blue-50 focus:outline-none">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Desktop Navigation -->
+                    <div class="hidden md:flex items-center space-x-2">
+                        <button id="profileBtn" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <span>Profile</span>
+                            </div>
+                        </button>
+                        <button id="submissionsBtn" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span>Submissions</span>
+                            </div>
+                        </button>
+                        <button id="completedBtn" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>Completed</span>
+                            </div>
+                        </button>
+                        <div class="h-6 w-px bg-gray-200 mx-2"></div>
+                        <button id="logoutBtn" class="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 rounded-lg transition-all duration-200 btn-modern">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                </svg>
+                                <span>Logout</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile Navigation Menu -->
+                <div id="mobileMenu" class="hidden md:hidden">
+                    <div class="px-2 pt-2 pb-3 space-y-1">
+                        <button id="mobileProfileBtn" class="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                                <span>Profile</span>
+                            </div>
+                        </button>
+                        <button id="mobileSubmissionsBtn" class="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                <span>Submissions</span>
+                            </div>
+                        </button>
+                        <button id="mobileCompletedBtn" class="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span>Completed</span>
+                            </div>
+                        </button>
+                        <div class="border-t border-gray-200 my-2"></div>
+                        <button id="mobileLogoutBtn" class="w-full px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 rounded-lg transition-all duration-200 btn-modern">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                </svg>
+                                <span>Logout</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Profile Section -->
+        <div id="profileSection" class="max-w-4xl mx-auto py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+            <div class="mb-6 sm:mb-8 slide-up">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Profile Settings</h2>
+                <p class="text-sm sm:text-base text-gray-600">Manage your personal information and account settings</p>
+            </div>
+            
+            <div class="bg-white/80 backdrop-blur-lg shadow-lg sm:shadow-xl rounded-2xl sm:rounded-3xl overflow-hidden border border-white/20 slide-up">
+                <div class="p-4 sm:p-8">
+                    <div class="flex flex-col sm:flex-row items-center mb-6 sm:mb-8">
+                        <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mr-6">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-gray-900">Personal Information</h3>
+                            <p class="text-gray-600">Update your profile details below</p>
+                        </div>
+                    </div>
+
+                    <form id="profileForm" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-gray-700">Full Name</label>
+                                <input id="profileName" type="text" disabled 
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-gray-700">Email Address</label>
+                                <input id="profileEmail" type="email" disabled 
+                                       class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-gray-700">Contact Number</label>
+                                <input id="profileContact" type="text" 
+                                       class="modern-input w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none text-gray-900" 
+                                       placeholder="Enter your contact number">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="block text-sm font-semibold text-gray-700">Address</label>
+                                <input id="profileAddress" type="text" 
+                                       class="modern-input w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none text-gray-900" 
+                                       placeholder="Enter your address">
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-4 pt-6 border-t border-gray-100">
+                            <button type="submit" 
+                                    class="btn-modern px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200">
+                                Save Changes
+                            </button>
+                            <button type="button" id="changePasswordBtn"
+                                    class="btn-modern px-8 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-gray-800 text-white rounded-xl font-semibold transition-all duration-200">
+                                Change Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submissions Section -->
+        <div id="submissionsSection" class="hidden max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="mb-12 slide-up">
+                <h2 class="text-3xl font-bold text-gray-900 mb-2">Assignment Submissions</h2>
+                <p class="text-gray-600 text-lg">Complete your assignments by submitting Google Drive links</p>
+            </div>
+            
+            <!-- Active Submissions -->
+            <div class="mb-16">
+                <div class="flex items-center mb-8">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-r from-orange-400 to-red-500 rounded-lg flex items-center justify-center mr-3">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900">Pending Assignments</h3>
+                    </div>
+                </div>
+                
+                <div id="activeSubmissions" class="submissions-grid">
+                    <!-- Active submissions will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Section -->
+        <div id="completedSection" class="hidden max-w-7xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+            <!-- Header -->
+            <div class="mb-8 sm:mb-12 slide-up">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Completed Assignments</h2>
+                <p class="text-base sm:text-lg text-gray-600">View your completed assignment submissions</p>
+            </div>
+            
+            <!-- Completed Submissions -->
+            <div>
+                <div class="flex items-center mb-6 sm:mb-8">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center mr-3 shadow-lg">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl sm:text-2xl font-bold text-gray-900">Completed Submissions</h3>
+                    </div>
+                </div>
+                
+                <div id="previousSubmissions" class="submissions-grid">
+                    <!-- Previous submissions will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enhanced Password Change Modal -->
+    <div id="passwordModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-md border border-white/20 overflow-hidden">
+            <div class="p-8">
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Change Password</h3>
+                    <p class="text-gray-600">Create a new secure password</p>
+                </div>
+                
+                <form id="passwordChangeForm" class="space-y-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Current Password</label>
+                            <input id="currentPassword" type="password" required 
+                                   class="modern-input w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">New Password</label>
+                            <input id="newPassword" type="password" required 
+                                   class="modern-input w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Confirm New Password</label>
+                            <input id="confirmPassword" type="password" required 
+                                   class="modern-input w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none">
+                        </div>
+                    </div>
+                    
+                    <div class="flex space-x-4 pt-4">
+                        <button type="submit" 
+                                class="btn-modern flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200">
+                            Update Password
+                        </button>
+                        <button type="button" id="cancelPasswordChange"
+                                class="btn-modern flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all duration-200">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            // Replace with your Firebase config
+        apiKey: "AIzaSyCF2ZNpG7xI4cCbillpi4RLm0gyavQzIrQ",
+        authDomain: "open-learn-lms.firebaseapp.com",
+        projectId: "open-learn-lms",
+        storageBucket: "open-learn-lms.firebasestorage.app",
+        messagingSenderId: "536639333963",
+        appId: "1:536639333963:web:7e92c5e8b18b9a9fa30fce",
+        measurementId: "G-3N7EDVQDMX"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // Global variables
+        let currentUser = null;
+        let userProfile = null;
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loginPage = document.getElementById('loginPage');
+        const dashboard = document.getElementById('dashboard');
+        const profileSection = document.getElementById('profileSection');
+        const submissionsSection = document.getElementById('submissionsSection');
+
+        // Navigation elements
+        const profileBtn = document.getElementById('profileBtn');
+        const submissionsBtn = document.getElementById('submissionsBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        // Utility Functions
+        function showLoading() {
+            loadingScreen.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingScreen.classList.add('hidden');
+        }
+
+        function showError(message, elementId = 'loginError', duration = 5000) {
+            const errorEl = document.getElementById(elementId);
+            if (!errorEl) return;
+
+            // Clear any existing timeout
+            if (errorEl.timeoutId) {
+                clearTimeout(errorEl.timeoutId);
+            }
+
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+            
+            // For cooldown messages, show them longer
+            const timeoutDuration = message.includes('Please wait') ? 10000 : duration;
+            
+            errorEl.timeoutId = setTimeout(() => {
+                errorEl.classList.add('hidden');
+            }, timeoutDuration);
+        }
+
+        function showSuccess(message) {
+            // Create enhanced success message
+            const successEl = document.createElement('div');
+            successEl.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl z-50 slide-up border border-white/20';
+            successEl.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            document.body.appendChild(successEl);
+            setTimeout(() => {
+                successEl.style.opacity = '0';
+                successEl.style.transform = 'translateX(100%)';
+                setTimeout(() => successEl.remove(), 300);
+            }, 3000);
+        }
+
+        // Convert Google Drive share link to direct download link
+        function convertGoogleDriveLink(shareLink) {
+            const fileIdMatch = shareLink.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (fileIdMatch) {
+                const fileId = fileIdMatch[1];
+                return `https://drive.google.com/uc?export=download&id=${fileId}`;
+            }
+            return shareLink; // Return original if not a Google Drive link
+        }
+
+        // Authentication State Observer
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadUserProfile();
+                if (userProfile && userProfile.role === 'student') {
+                    showDashboard();
+                } else {
+                    showError('Access denied. Students only.');
+                    auth.signOut();
+                }
+            } else {
+                currentUser = null;
+                userProfile = null;
+                showLogin();
+            }
+            hideLoading();
+        });
+
+        // Load user profile from database
+        async function loadUserProfile() {
+            try {
+                const snapshot = await database.ref(`users/${currentUser.uid}`).once('value');
+                userProfile = snapshot.val();
+                if (userProfile) {
+                    populateProfileForm();
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+                showError('Error loading profile data');
+            }
+        }
+
+        // Populate profile form with user data
+        function populateProfileForm() {
+            if (userProfile) {
+                document.getElementById('profileName').value = userProfile.name || '';
+                document.getElementById('profileEmail').value = userProfile.email || '';
+                document.getElementById('profileContact').value = userProfile.contact || '';
+                document.getElementById('profileAddress').value = userProfile.address || '';
+            }
+        }
+
+        // Show login page
+        function showLogin() {
+            loginPage.classList.remove('hidden');
+            dashboard.classList.add('hidden');
+        }
+
+        // Show dashboard
+        function showDashboard() {
+            loginPage.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+            showProfileSection(); // Default to profile section
+            loadSubmissions();
+        }
+
+        // Navigation functions
+        function showProfileSection() {
+            profileSection.classList.remove('hidden');
+            submissionsSection.classList.add('hidden');
+            profileBtn.classList.add('text-blue-600', 'bg-blue-50');
+            submissionsBtn.classList.remove('text-blue-600', 'bg-blue-50');
+        }
+
+        function showSubmissionsSection() {
+            // Clear all section displays
+            document.getElementById('profileSection').classList.add('hidden');
+            document.getElementById('submissionsSection').classList.remove('hidden');
+            document.getElementById('completedSection').classList.add('hidden');
+            
+            // Update button states
+            document.getElementById('profileBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('submissionsBtn').classList.add('text-blue-600', 'bg-blue-50');
+            document.getElementById('completedBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            
+            // Clear containers and reload submissions
+            document.getElementById('activeSubmissions').innerHTML = '';
+            document.getElementById('previousSubmissions').innerHTML = '';
+            loadSubmissions();
+        }
+
+        // Load submissions
+        async function loadSubmissions() {
+            try {
+                // Clear both containers first
+                document.getElementById('activeSubmissions').innerHTML = '';
+                document.getElementById('previousSubmissions').innerHTML = '';
+                
+                // Load active submissions
+                const submissionsSnapshot = await database.ref('submissions').once('value');
+                const submissions = submissionsSnapshot.val() || {};
+                
+                // Load student submissions
+                const studentSubmissionsSnapshot = await database.ref('studentSubmissions').once('value');
+                const studentSubmissions = studentSubmissionsSnapshot.val() || {};
+                
+                // Only display relevant section based on which one is visible
+                if (!document.getElementById('submissionsSection').classList.contains('hidden')) {
+                    displayActiveSubmissions(submissions, studentSubmissions);
+                } else if (!document.getElementById('completedSection').classList.contains('hidden')) {
+                    displayPreviousSubmissions(submissions, studentSubmissions);
+                }
+            } catch (error) {
+                console.error('Error loading submissions:', error);
+                showError('Error loading submissions');
+            }
+        }
+
+        // Display active submissions
+        function displayActiveSubmissions(submissions, studentSubmissions) {
+            const container = document.getElementById('activeSubmissions');
+            container.innerHTML = '';
+            
+            let hasActiveSubmissions = false;
+            
+            Object.entries(submissions).forEach(([submissionId, submission]) => {
+                const userSubmission = studentSubmissions[submissionId]?.[currentUser.uid];
+                if (!userSubmission && submission) { // Check if submission exists and hasn't been submitted
+                    hasActiveSubmissions = true;
+                    const card = createSubmissionCard(submissionId, submission, null);
+                    container.appendChild(card);
+                }
+            });
+            
+            if (!hasActiveSubmissions) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-16">
+                        <div class="w-24 h-24 bg-gradient-to-r from-green-400 to-blue-500 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">All Caught Up!</h3>
+                        <p class="text-gray-600">You have completed all your assignments</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display previous submissions
+        function displayPreviousSubmissions(submissions, studentSubmissions) {
+            const container = document.getElementById('previousSubmissions');
+            container.innerHTML = '';
+            
+            let hasPreviousSubmissions = false;
+            
+            Object.entries(submissions).forEach(([submissionId, submission]) => {
+                const userSubmission = studentSubmissions[submissionId]?.[currentUser.uid];
+                if (userSubmission && submission) { // Check if both submission and userSubmission exist
+                    hasPreviousSubmissions = true;
+                    const card = createPreviousSubmissionCard(submissionId, submission, userSubmission);
+                    container.appendChild(card);
+                }
+            });
+            
+            if (!hasPreviousSubmissions) {
+                container.innerHTML = `
+                    <div class="text-center py-16 bg-white/50 backdrop-blur-lg rounded-3xl border border-white/20">
+                        <div class="w-20 h-20 bg-gradient-to-r from-gray-400 to-gray-500 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-medium text-gray-600 mb-2">No Submissions Yet</h3>
+                        <p class="text-gray-500">Your completed assignments will appear here</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Create enhanced submission card
+        function createSubmissionCard(submissionId, submission, userSubmission) {
+            const card = document.createElement('div');
+            card.className = 'bg-white/80 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-xl border border-white/20 p-6 sm:p-8 card-hover slide-up';
+            
+            card.innerHTML = `
+                <div class="card-content">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-orange-400 to-red-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <span class="status-badge status-pending">Pending</span>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">${submission.title}</h3>
+                        <p class="text-sm sm:text-base text-gray-600 leading-relaxed">${submission.description}</p>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <div class="relative mb-4">
+                            <input type="url" 
+                                   placeholder="Paste your Google Drive link here..." 
+                                   class="modern-input w-full px-4 py-3 sm:py-4 bg-white/90 border border-gray-200 rounded-xl sm:rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500 pr-12 text-sm sm:text-base"
+                                   id="url-${submissionId}">
+                            <div class="absolute right-4 top-1/2 transform -translate-y-1/2">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <button onclick="submitAssignment('${submissionId}')" 
+                                class="btn-modern w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <span>Submit Assignment</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Create enhanced previous submission card
+        function createPreviousSubmissionCard(submissionId, submission, userSubmission) {
+            const card = document.createElement('div');
+            card.className = 'bg-white/80 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-xl border border-white/20 p-6 sm:p-8 card-hover slide-up';
+            
+            const submittedDate = new Date(userSubmission.submittedAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            card.innerHTML = `
+                <div class="card-content">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-green-400 to-blue-500 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg transform transition-transform hover:scale-105">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <span class="status-badge status-completed text-sm">Completed</span>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">${submission.title}</h4>
+                        <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-4">${submission.description}</p>
+                        <div class="flex items-center text-xs sm:text-sm text-gray-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>Submitted on ${submittedDate}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <div class="grid grid-cols-2 gap-3">
+                            <a href="${userSubmission.directDownload}" target="_blank" 
+                               class="btn-modern px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 text-sm shadow-lg hover:shadow-xl">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                <span>View</span>
+                            </a>
+                            <button onclick="editSubmission('${submissionId}', '${userSubmission.url}')" 
+                                    class="btn-modern px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 text-sm shadow-lg hover:shadow-xl">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            <span>Edit</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Submit assignment
+        window.submitAssignment = async function(submissionId) {
+            const urlInput = document.getElementById(`url-${submissionId}`);
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a Google Drive link');
+                return;
+            }
+            
+            // Add loading state
+            const button = urlInput.parentElement.nextElementSibling;
+            const originalText = button.innerHTML;
+            button.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Submitting...</span>
+            `;
+            button.disabled = true;
+            
+            try {
+                const directDownload = convertGoogleDriveLink(url);
+                
+                await database.ref(`studentSubmissions/${submissionId}/${currentUser.uid}`).set({
+                    url: url,
+                    directDownload: directDownload,
+                    submittedAt: new Date().toISOString()
+                });
+                
+                showSuccess('Assignment submitted successfully!');
+                loadSubmissions(); // Refresh submissions
+            } catch (error) {
+                console.error('Error submitting assignment:', error);
+                showError('Error submitting assignment');
+                
+                // Restore button
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        };
+
+        // Edit submission with enhanced modal
+        window.editSubmission = function(submissionId, currentUrl) {
+            // Create enhanced edit modal
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-md border border-white/20 overflow-hidden">
+                    <div class="p-8">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Edit Submission</h3>
+                            <p class="text-gray-600">Update your Google Drive link</p>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Google Drive Link</label>
+                                <input type="url" value="${currentUrl}" 
+                                       class="modern-input w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none"
+                                       id="editUrl">
+                            </div>
+                            
+                            <div class="flex space-x-4">
+                                <button onclick="updateSubmissionFromModal('${submissionId}')" 
+                                        class="btn-modern flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200">
+                                    Update
+                                </button>
+                                <button onclick="closeEditModal()" 
+                                        class="btn-modern flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all duration-200">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.style.animation = 'fadeIn 0.3s ease-out';
+        };
+
+        // Close edit modal
+        window.closeEditModal = function() {
+            const modal = document.querySelector('.fixed.inset-0.bg-black\\/50');
+            if (modal) {
+                modal.style.opacity = '0';
+                setTimeout(() => modal.remove(), 300);
+            }
+        };
+
+        // Update submission from modal
+        window.updateSubmissionFromModal = function(submissionId) {
+            const newUrl = document.getElementById('editUrl').value.trim();
+            if (newUrl) {
+                updateSubmission(submissionId, newUrl);
+                closeEditModal();
+            }
+        };
+
+        // Update submission
+        async function updateSubmission(submissionId, newUrl) {
+            try {
+                const directDownload = convertGoogleDriveLink(newUrl);
+                
+                await database.ref(`studentSubmissions/${submissionId}/${currentUser.uid}`).update({
+                    url: newUrl,
+                    directDownload: directDownload,
+                    submittedAt: new Date().toISOString()
+                });
+                
+                showSuccess('Submission updated successfully!');
+                loadSubmissions(); // Refresh submissions
+            } catch (error) {
+                console.error('Error updating submission:', error);
+                showError('Error updating submission');
+            }
+        }
+
+        // Event Listeners
+        function initializeEventListeners() {
+            // Forgot Password Button
+            const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+            if (forgotPasswordBtn) {
+                forgotPasswordBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('forgotPasswordModal');
+                    if (modal) modal.classList.remove('hidden');
+                });
+            }
+
+            // Cancel Forgot Password
+            const cancelForgotPassword = document.getElementById('cancelForgotPassword');
+            if (cancelForgotPassword) {
+                cancelForgotPassword.addEventListener('click', () => {
+                    const modal = document.getElementById('forgotPasswordModal');
+                    const form = document.getElementById('forgotPasswordForm');
+                    if (modal) modal.classList.add('hidden');
+                    if (form) form.reset();
+                });
+            }
+
+            // Track reset attempts
+            let lastResetAttempt = 0;
+            const RESET_COOLDOWN = 60000; // 60 seconds cooldown
+
+            // Forgot Password Form
+            const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+            if (forgotPasswordForm) {
+                forgotPasswordForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('resetEmail')?.value;
+                    if (!email) return;
+
+                    // Check cooldown
+                    const now = Date.now();
+                    if (now - lastResetAttempt < RESET_COOLDOWN) {
+                        const remainingTime = Math.ceil((RESET_COOLDOWN - (now - lastResetAttempt)) / 1000);
+                        showError(`Please wait ${remainingTime} seconds before requesting another reset link`, 'forgotPasswordError');
+                        return;
+                    }
+                    
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    const cancelBtn = document.getElementById('cancelForgotPassword');
+                    const emailInput = document.getElementById('resetEmail');
+                    const originalText = submitBtn.innerHTML;
+
+                    // Disable form elements
+                    submitBtn.innerHTML = `
+                        <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                        <span>Sending...</span>
+                    `;
+                    submitBtn.disabled = true;
+                    cancelBtn.disabled = true;
+                    emailInput.disabled = true;
+                    
+                    try {
+                        await auth.sendPasswordResetEmail(email);
+                        lastResetAttempt = Date.now();
+                        showSuccess('Password reset link sent! Please check your email (including spam folder)');
+                        const modal = document.getElementById('forgotPasswordModal');
+                        if (modal) modal.classList.add('hidden');
+                        if (forgotPasswordForm) forgotPasswordForm.reset();
+                    } catch (error) {
+                        console.error('Error sending password reset email:', error);
+                        showError(error.message, 'forgotPasswordError');
+                    } finally {
+                        // Re-enable all form elements
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        cancelBtn.disabled = false;
+                        emailInput.disabled = false;
+                    }
+                });
+            }
+        }
+
+        // Initialize event listeners when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeEventListeners);
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Add loading state to button
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Signing In...</span>
+            `;
+            submitBtn.disabled = true;
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                showError(error.message);
+                
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Saving...</span>
+            `;
+            submitBtn.disabled = true;
+            
+            try {
+                const updates = {
+                    contact: document.getElementById('profileContact').value,
+                    address: document.getElementById('profileAddress').value
+                };
+                
+                await database.ref(`users/${currentUser.uid}`).update(updates);
+                showSuccess('Profile updated successfully!');
+                
+                // Update local userProfile object
+                userProfile = { ...userProfile, ...updates };
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showError('Error updating profile');
+            } finally {
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('passwordChangeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                showError('New passwords do not match');
+                return;
+            }
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Updating...</span>
+            `;
+            submitBtn.disabled = true;
+            
+            try {
+                // Re-authenticate user
+                const credential = firebase.auth.EmailAuthProvider.credential(
+                    currentUser.email,
+                    currentPassword
+                );
+                await currentUser.reauthenticateWithCredential(credential);
+                
+                // Update password
+                await currentUser.updatePassword(newPassword);
+                
+                showSuccess('Password updated successfully!');
+                document.getElementById('passwordModal').classList.add('hidden');
+                document.getElementById('passwordChangeForm').reset();
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showError('Error changing password: ' + error.message);
+            } finally {
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Function to show profile section
+        function showProfileSection() {
+            document.getElementById('profileSection').classList.remove('hidden');
+            document.getElementById('submissionsSection').classList.add('hidden');
+            document.getElementById('completedSection').classList.add('hidden');
+            document.getElementById('profileBtn').classList.add('text-blue-600', 'bg-blue-50');
+            document.getElementById('submissionsBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('completedBtn').classList.remove('text-blue-600', 'bg-blue-50');
+        }
+
+        // Function to show submissions section
+        function showSubmissionsSection() {
+            document.getElementById('profileSection').classList.add('hidden');
+            document.getElementById('submissionsSection').classList.remove('hidden');
+            document.getElementById('completedSection').classList.add('hidden');
+            document.getElementById('profileBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('submissionsBtn').classList.add('text-blue-600', 'bg-blue-50');
+            document.getElementById('completedBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            loadSubmissions(); // Reload submissions when showing this section
+        }
+
+        // Function to show completed section
+        function showCompletedSection() {
+            document.getElementById('profileSection').classList.add('hidden');
+            document.getElementById('submissionsSection').classList.add('hidden');
+            document.getElementById('completedSection').classList.remove('hidden');
+            document.getElementById('profileBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('submissionsBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('completedBtn').classList.add('text-blue-600', 'bg-blue-50');
+            loadSubmissions(); // Reload submissions when showing this section
+        }
+
+        // Navigation event listeners
+        profileBtn.addEventListener('click', showProfileSection);
+        submissionsBtn.addEventListener('click', showSubmissionsSection);
+        document.getElementById('completedBtn').addEventListener('click', showCompletedSection);
+        
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        document.getElementById('changePasswordBtn').addEventListener('click', () => {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        });
+
+        document.getElementById('cancelPasswordChange').addEventListener('click', () => {
+            document.getElementById('passwordModal').classList.add('hidden');
+            document.getElementById('passwordChangeForm').reset();
+        });
+
+        // Forgot Password functionality
+        document.getElementById('forgotPasswordBtn').addEventListener('click', () => {
+            document.getElementById('forgotPasswordModal').classList.remove('hidden');
+        });
+
+        document.getElementById('cancelForgotPassword').addEventListener('click', () => {
+            document.getElementById('forgotPasswordModal').classList.add('hidden');
+            document.getElementById('forgotPasswordForm').reset();
+        });
+
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value;
+            
+            // Add loading state to button
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Sending...</span>
+            `;
+            submitBtn.disabled = true;
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showSuccess('Password reset link sent! Please check your email (including spam folder)');
+                document.getElementById('forgotPasswordModal').classList.add('hidden');
+                document.getElementById('forgotPasswordForm').reset();
+            } catch (error) {
+                console.error('Error sending password reset email:', error);
+                showError(error.message, 'forgotPasswordError');
+            } finally {
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Initialize app
+        showLoading();
+
+        // Mobile menu functionality
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+
+        // Mobile menu button handlers
+        document.getElementById('mobileProfileBtn').addEventListener('click', () => {
+            showProfileSection();
+            mobileMenu.classList.add('hidden');
+        });
+
+        document.getElementById('mobileSubmissionsBtn').addEventListener('click', () => {
+            showSubmissionsSection();
+            mobileMenu.classList.add('hidden');
+        });
+
+        document.getElementById('mobileCompletedBtn').addEventListener('click', () => {
+            showCompletedSection();
+            mobileMenu.classList.add('hidden');
+        });
+
+        document.getElementById('mobileLogoutBtn').addEventListener('click', () => {
+            auth.signOut();
+            mobileMenu.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
