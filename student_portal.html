@@ -101,6 +101,26 @@
             background: rgba(255, 255, 255, 0.95);
         }
 
+        /* Footer styles */
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        main {
+            flex: 1 0 auto;
+        }
+
+        footer {
+            flex-shrink: 0;
+            width: 100%;
+            background-color: #fff;
+            padding: 1rem 0;
+            margin-top: auto;
+            border-top: 1px solid #f1f1f1;
+        }
+
         .card-content {
             flex: 1;
             display: flex;
@@ -154,6 +174,23 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* Footer styles */
+        .page-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-wrapper {
+            flex: 1 0 auto;
+        }
+
+        .footer {
+            flex-shrink: 0;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
         }
         
         /* Custom input styles */
@@ -359,6 +396,14 @@
 
                     <!-- Desktop Navigation -->
                     <div class="hidden md:flex items-center space-x-2">
+                        <button id="homeBtn" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                                <span>Home</span>
+                            </div>
+                        </button>
                         <button id="profileBtn" class="px-4 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
                             <div class="flex items-center space-x-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,6 +443,14 @@
                 <!-- Mobile Navigation Menu -->
                 <div id="mobileMenu" class="hidden md:hidden">
                     <div class="px-2 pt-2 pb-3 space-y-1">
+                        <button id="mobileHomeBtn" class="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
+                            <div class="flex items-center space-x-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                                <span>Home</span>
+                            </div>
+                        </button>
                         <button id="mobileProfileBtn" class="w-full text-left px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200">
                             <div class="flex items-center space-x-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -435,6 +488,75 @@
                 </div>
             </div>
         </nav>
+
+        <!-- Home Section -->
+        <div id="homeSection" class="max-w-7xl mx-auto py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
+            <div class="mb-6 sm:mb-8 slide-up">
+                <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">Welcome to Open Learn LMS</h2>
+                <p class="text-lg text-gray-600 mb-8">Your gateway to interactive learning and skill development</p>
+                
+                <!-- Features Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Feature Card 1 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow duration-300">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-blue-100 rounded-lg p-3">
+                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                                </svg>
+                            </div>
+                            <h3 class="ml-4 text-lg font-semibold">Interactive Learning</h3>
+                        </div>
+                        <p class="text-gray-600">Engage with dynamic content and hands-on exercises designed to enhance your learning experience.</p>
+                    </div>
+
+                    <!-- Feature Card 2 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow duration-300">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-purple-100 rounded-lg p-3">
+                                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                                </svg>
+                            </div>
+                            <h3 class="ml-4 text-lg font-semibold">Track Progress</h3>
+                        </div>
+                        <p class="text-gray-600">Monitor your learning journey with detailed progress tracking and achievement milestones.</p>
+                    </div>
+
+                    <!-- Feature Card 3 -->
+                    <div class="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow duration-300">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-green-100 rounded-lg p-3">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="ml-4 text-lg font-semibold">Instant Feedback</h3>
+                        </div>
+                        <p class="text-gray-600">Get immediate feedback on your submissions and track your improvement over time.</p>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6">
+                        <h4 class="text-xl font-semibold text-blue-900 mb-2">Your Progress</h4>
+                        <p class="text-3xl font-bold text-blue-600">85%</p>
+                        <p class="text-sm text-blue-700 mt-1">Course completion rate</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6">
+                        <h4 class="text-xl font-semibold text-purple-900 mb-2">Achievements</h4>
+                        <p class="text-3xl font-bold text-purple-600">12</p>
+                        <p class="text-sm text-purple-700 mt-1">Badges earned</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6">
+                        <h4 class="text-xl font-semibold text-green-900 mb-2">Active Streak</h4>
+                        <p class="text-3xl font-bold text-green-600">7</p>
+                        <p class="text-sm text-green-700 mt-1">Days in a row</p>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Profile Section -->
         <div id="profileSection" class="max-w-4xl mx-auto py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
@@ -627,13 +749,20 @@
         const loadingScreen = document.getElementById('loadingScreen');
         const loginPage = document.getElementById('loginPage');
         const dashboard = document.getElementById('dashboard');
+        const homeSection = document.getElementById('homeSection');
         const profileSection = document.getElementById('profileSection');
         const submissionsSection = document.getElementById('submissionsSection');
+        const completedSection = document.getElementById('completedSection');
 
         // Navigation elements
+        const homeBtn = document.getElementById('homeBtn');
         const profileBtn = document.getElementById('profileBtn');
         const submissionsBtn = document.getElementById('submissionsBtn');
         const logoutBtn = document.getElementById('logoutBtn');
+        
+        // Mobile Navigation elements
+        const mobileHomeBtn = document.getElementById('mobileHomeBtn');
+        const mobileProfileBtn = document.getElementById('mobileProfileBtn');
 
         // Utility Functions
         function showLoading() {
@@ -694,13 +823,58 @@
             return shareLink; // Return original if not a Google Drive link
         }
 
+        // Section Management
+        function showSection(section) {
+            // Hide all sections first
+            homeSection.classList.add('hidden');
+            profileSection.classList.add('hidden');
+            submissionsSection.classList.add('hidden');
+            completedSection.classList.add('hidden');
+
+            // Reset all navigation highlights
+            document.getElementById('homeBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('profileBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('submissionsBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('completedBtn').classList.remove('text-blue-600', 'bg-blue-50');
+
+            // Show the selected section and highlight its navigation
+            switch(section) {
+                case 'home':
+                    homeSection.classList.remove('hidden');
+                    document.getElementById('homeBtn').classList.add('text-blue-600', 'bg-blue-50');
+                    break;
+                case 'profile':
+                    profileSection.classList.remove('hidden');
+                    document.getElementById('profileBtn').classList.add('text-blue-600', 'bg-blue-50');
+                    break;
+                case 'submissions':
+                    submissionsSection.classList.remove('hidden');
+                    document.getElementById('submissionsBtn').classList.add('text-blue-600', 'bg-blue-50');
+                    loadSubmissions(); // Reload submissions when showing submissions section
+                    break;
+                case 'completed':
+                    completedSection.classList.remove('hidden');
+                    document.getElementById('completedBtn').classList.add('text-blue-600', 'bg-blue-50');
+                    loadSubmissions(); // Reload submissions when showing completed section
+                    break;
+            }
+
+            // Close mobile menu if open
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu) {
+                mobileMenu.classList.add('hidden');
+            }
+        }
+
         // Authentication State Observer
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUser = user;
                 await loadUserProfile();
                 if (userProfile && userProfile.role === 'student') {
-                    showDashboard();
+                    loginPage.classList.add('hidden');
+                    dashboard.classList.remove('hidden');
+                    showSection('home'); // Show home section by default
                 } else {
                     showError('Access denied. Students only.');
                     auth.signOut();
@@ -779,38 +953,65 @@
         // Load submissions
         async function loadSubmissions() {
             try {
+                console.log('Loading submissions...');
                 // Clear both containers first
-                document.getElementById('activeSubmissions').innerHTML = '';
+                document.getElementById('activeSubmissions').innerHTML = '<div class="text-center py-4">Loading submissions...</div>';
                 document.getElementById('previousSubmissions').innerHTML = '';
                 
                 // Load active submissions
                 const submissionsSnapshot = await database.ref('submissions').once('value');
                 const submissions = submissionsSnapshot.val() || {};
+                console.log('Loaded submissions:', submissions);
                 
                 // Load student submissions
                 const studentSubmissionsSnapshot = await database.ref('studentSubmissions').once('value');
                 const studentSubmissions = studentSubmissionsSnapshot.val() || {};
+                console.log('Loaded student submissions:', studentSubmissions);
                 
-                // Only display relevant section based on which one is visible
-                if (!document.getElementById('submissionsSection').classList.contains('hidden')) {
-                    displayActiveSubmissions(submissions, studentSubmissions);
-                } else if (!document.getElementById('completedSection').classList.contains('hidden')) {
-                    displayPreviousSubmissions(submissions, studentSubmissions);
-                }
+                // Always display both sections when loading
+                displayActiveSubmissions(submissions, studentSubmissions);
+                displayPreviousSubmissions(submissions, studentSubmissions);
+                
+                console.log('Submissions displayed');
             } catch (error) {
                 console.error('Error loading submissions:', error);
-                showError('Error loading submissions');
+                document.getElementById('activeSubmissions').innerHTML = `
+                    <div class="text-center py-4 text-red-600">
+                        Error loading submissions: ${error.message}
+                        <button onclick="loadSubmissions()" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+                showError('Error loading submissions: ' + error.message);
             }
         }
 
         // Display active submissions
         function displayActiveSubmissions(submissions, studentSubmissions) {
+            console.log('Displaying active submissions');
             const container = document.getElementById('activeSubmissions');
             container.innerHTML = '';
             
             let hasActiveSubmissions = false;
             
+            if (!submissions || Object.keys(submissions).length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16">
+                        <div class="w-24 h-24 bg-gradient-to-r from-blue-400 to-purple-500 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">No Assignments Available</h3>
+                        <p class="text-gray-600">Check back later for new assignments</p>
+                    </div>
+                `;
+                return;
+            }
+            
             Object.entries(submissions).forEach(([submissionId, submission]) => {
+                console.log('Processing submission:', submissionId, submission);
                 const userSubmission = studentSubmissions[submissionId]?.[currentUser.uid];
                 if (!userSubmission && submission) { // Check if submission exists and hasn't been submitted
                     hasActiveSubmissions = true;
@@ -1292,21 +1493,13 @@
             loadSubmissions(); // Reload submissions when showing this section
         }
 
-        // Function to show completed section
-        function showCompletedSection() {
-            document.getElementById('profileSection').classList.add('hidden');
-            document.getElementById('submissionsSection').classList.add('hidden');
-            document.getElementById('completedSection').classList.remove('hidden');
-            document.getElementById('profileBtn').classList.remove('text-blue-600', 'bg-blue-50');
-            document.getElementById('submissionsBtn').classList.remove('text-blue-600', 'bg-blue-50');
-            document.getElementById('completedBtn').classList.add('text-blue-600', 'bg-blue-50');
-            loadSubmissions(); // Reload submissions when showing this section
-        }
-
         // Navigation event listeners
-        profileBtn.addEventListener('click', showProfileSection);
-        submissionsBtn.addEventListener('click', showSubmissionsSection);
-        document.getElementById('completedBtn').addEventListener('click', showCompletedSection);
+        homeBtn.addEventListener('click', () => showSection('home'));
+        mobileHomeBtn.addEventListener('click', () => showSection('home'));
+        profileBtn.addEventListener('click', () => showSection('profile'));
+        mobileProfileBtn.addEventListener('click', () => showSection('profile'));
+        submissionsBtn.addEventListener('click', () => showSection('submissions'));
+        document.getElementById('completedBtn').addEventListener('click', () => showSection('completed'));
         
         logoutBtn.addEventListener('click', () => {
             auth.signOut();
@@ -1379,17 +1572,17 @@
 
         // Mobile menu button handlers
         document.getElementById('mobileProfileBtn').addEventListener('click', () => {
-            showProfileSection();
+            showSection('profile');
             mobileMenu.classList.add('hidden');
         });
 
         document.getElementById('mobileSubmissionsBtn').addEventListener('click', () => {
-            showSubmissionsSection();
+            showSection('submissions');
             mobileMenu.classList.add('hidden');
         });
 
         document.getElementById('mobileCompletedBtn').addEventListener('click', () => {
-            showCompletedSection();
+            showSection('completed');
             mobileMenu.classList.add('hidden');
         });
 
@@ -1398,5 +1591,19 @@
             mobileMenu.classList.add('hidden');
         });
     </script>
+        
+        <!-- Footer -->
+        <footer class="mt-auto text-center text-sm text-gray-600 py-4 border-t border-gray-100 bg-white">
+            <div class="container mx-auto px-4">
+                <div class="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
+                    <div>© 2025 Open Learn. All rights reserved.</div>
+                    <div class="flex gap-6">
+                        <a href="#" class="hover:text-gray-900">Privacy Policy</a>
+                        <a href="#" class="hover:text-gray-900">Terms of Service</a>
+                        <a href="#" class="hover:text-gray-900">Contact Us</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
 </body>
 </html>
