@@ -616,12 +616,16 @@
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentAdmin = user;
-                await loadAdminProfile();
-                if (adminProfile && adminProfile.role === 'admin') {
-                    showDashboard();
-                } else {
-                    showError('Access denied. Admins only.');
-                    auth.signOut();
+                try {
+                    const snapshot = await database.ref(`users/${user.uid}`).once('value');
+                    adminProfile = snapshot.val();
+                    if (adminProfile) {
+                        document.getElementById('adminName').textContent = `Welcome, ${adminProfile.name}`;
+                        showDashboard();
+                    }
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                    showError('Error loading profile data. Please refresh the page.');
                 }
             } else {
                 currentAdmin = null;
@@ -639,9 +643,11 @@
                 if (adminProfile) {
                     document.getElementById('adminName').textContent = `Welcome, ${adminProfile.name}`;
                 }
+                return true;
             } catch (error) {
                 console.error('Error loading admin profile:', error);
-                showError('Error loading profile data');
+                showError('Error loading profile data. Please refresh the page if needed.');
+                return false;
             }
         }
 
@@ -809,7 +815,12 @@
                 populateAssignmentFilter();
             } catch (error) {
                 console.error('Error loading data:', error);
-                showError('Error loading data');
+                showError('Error loading data. Please check your internet connection and refresh the page.');
+                
+                // Initialize empty objects to prevent errors
+                allSubmissions = allSubmissions || {};
+                allStudentSubmissions = allStudentSubmissions || {};
+                allStudents = allStudents || {};
             }
         }
 
@@ -1262,10 +1273,21 @@
             document.getElementById('addStudentModal').classList.remove('hidden');
         });
 
-        document.getElementById('cancelAddStudent').addEventListener('click', () => {
+        document.getElementById('cancelAddStudent').addEventListener('click', closeAddStudentModal);
+        document.getElementById('closeModal').addEventListener('click', closeAddStudentModal);
+
+        function closeAddStudentModal() {
             document.getElementById('addStudentModal').classList.add('hidden');
             document.getElementById('addStudentForm').reset();
-        });
+            // Clear any validation states or error messages
+            const form = document.getElementById('addStudentForm');
+            form.querySelectorAll('input').forEach(input => {
+                input.classList.remove('border-red-500');
+            });
+            form.querySelectorAll('.error-message').forEach(error => {
+                error.remove();
+            });
+        }
 
         // Assignment filter change
         document.getElementById('assignmentFilter').addEventListener('change', loadSubmissionsTable);
@@ -1276,8 +1298,34 @@
         // Close modal when clicking outside
         document.getElementById('addStudentModal').addEventListener('click', (e) => {
             if (e.target === document.getElementById('addStudentModal')) {
-                document.getElementById('addStudentModal').classList.add('hidden');
-                document.getElementById('addStudentForm').reset();
+                closeAddStudentModal();
+            }
+        });
+
+        // Function to handle modal closing
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            modal.classList.add('hidden');
+            
+            // Reset any forms inside the modal
+            const form = modal.querySelector('form');
+            if (form) {
+                form.reset();
+                // Clear any validation states or error messages
+                form.querySelectorAll('input').forEach(input => {
+                    input.classList.remove('border-red-500');
+                });
+                form.querySelectorAll('.error-message').forEach(error => {
+                    error.remove();
+                });
+            }
+        }
+
+        // Add click event listeners for all modal close buttons
+        document.querySelectorAll('[id$="Modal"]').forEach(modal => {
+            const closeBtn = modal.querySelector('[id^="close"]');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => closeModal(modal.id));
             }
         });
 
