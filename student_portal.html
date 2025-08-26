@@ -723,7 +723,874 @@
         </div>
     </div>
 
-    <script src="student_portal.js"></script>
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            // Replace with your Firebase config
+        apiKey: "AIzaSyCF2ZNpG7xI4cCbillpi4RLm0gyavQzIrQ",
+        authDomain: "open-learn-lms.firebaseapp.com",
+        projectId: "open-learn-lms",
+        storageBucket: "open-learn-lms.firebasestorage.app",
+        messagingSenderId: "536639333963",
+        appId: "1:536639333963:web:7e92c5e8b18b9a9fa30fce",
+        measurementId: "G-3N7EDVQDMX"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const database = firebase.database();
+
+        // Global variables
+        let currentUser = null;
+        let userProfile = null;
+
+        // DOM Elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const loginPage = document.getElementById('loginPage');
+        const dashboard = document.getElementById('dashboard');
+        const homeSection = document.getElementById('homeSection');
+        const profileSection = document.getElementById('profileSection');
+        const submissionsSection = document.getElementById('submissionsSection');
+        const completedSection = document.getElementById('completedSection');
+
+        // Navigation elements
+        const homeBtn = document.getElementById('homeBtn');
+        const profileBtn = document.getElementById('profileBtn');
+        const submissionsBtn = document.getElementById('submissionsBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        // Mobile Navigation elements
+        const mobileHomeBtn = document.getElementById('mobileHomeBtn');
+        const mobileProfileBtn = document.getElementById('mobileProfileBtn');
+
+        // Utility Functions
+        function showLoading() {
+            loadingScreen.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingScreen.classList.add('hidden');
+        }
+
+        function showError(message, elementId = 'loginError', duration = 5000) {
+            const errorEl = document.getElementById(elementId);
+            if (!errorEl) return;
+
+            // Clear any existing timeout
+            if (errorEl.timeoutId) {
+                clearTimeout(errorEl.timeoutId);
+            }
+
+            errorEl.textContent = message;
+            errorEl.classList.remove('hidden');
+            
+            // For cooldown messages, show them longer
+            const timeoutDuration = message.includes('Please wait') ? 10000 : duration;
+            
+            errorEl.timeoutId = setTimeout(() => {
+                errorEl.classList.add('hidden');
+            }, timeoutDuration);
+        }
+
+        function showSuccess(message) {
+            // Create enhanced success message
+            const successEl = document.createElement('div');
+            successEl.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl z-50 slide-up border border-white/20';
+            successEl.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            document.body.appendChild(successEl);
+            setTimeout(() => {
+                successEl.style.opacity = '0';
+                successEl.style.transform = 'translateX(100%)';
+                setTimeout(() => successEl.remove(), 300);
+            }, 3000);
+        }
+
+        // Convert Google Drive share link to direct download link
+        function convertGoogleDriveLink(shareLink) {
+            const fileIdMatch = shareLink.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (fileIdMatch) {
+                const fileId = fileIdMatch[1];
+                return `https://drive.google.com/uc?export=download&id=${fileId}`;
+            }
+            return shareLink; // Return original if not a Google Drive link
+        }
+
+        // Section Management
+        function showSection(section) {
+            // Hide all sections first
+            homeSection.classList.add('hidden');
+            profileSection.classList.add('hidden');
+            submissionsSection.classList.add('hidden');
+            completedSection.classList.add('hidden');
+
+            // Reset all navigation highlights
+            document.getElementById('homeBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('profileBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('submissionsBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('completedBtn').classList.remove('text-blue-600', 'bg-blue-50');
+
+            // Show the selected section and highlight its navigation
+            switch(section) {
+                case 'home':
+                    homeSection.classList.remove('hidden');
+                    document.getElementById('homeBtn').classList.add('text-blue-600', 'bg-blue-50');
+                    break;
+                case 'profile':
+                    profileSection.classList.remove('hidden');
+                    document.getElementById('profileBtn').classList.add('text-blue-600', 'bg-blue-50');
+                    break;
+                case 'submissions':
+                    submissionsSection.classList.remove('hidden');
+                    document.getElementById('submissionsBtn').classList.add('text-blue-600', 'bg-blue-50');
+                    loadSubmissions(); // Reload submissions when showing submissions section
+                    break;
+                case 'completed':
+                    completedSection.classList.remove('hidden');
+                    document.getElementById('completedBtn').classList.add('text-blue-600', 'bg-blue-50');
+                    loadSubmissions(); // Reload submissions when showing completed section
+                    break;
+            }
+
+            // Close mobile menu if open
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu) {
+                mobileMenu.classList.add('hidden');
+            }
+        }
+
+        // Authentication State Observer
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUser = user;
+                await loadUserProfile();
+                if (userProfile && userProfile.role === 'student') {
+                    loginPage.classList.add('hidden');
+                    dashboard.classList.remove('hidden');
+                    showSection('home'); // Show home section by default
+                } else {
+                    showError('Access denied. Students only.');
+                    auth.signOut();
+                }
+            } else {
+                currentUser = null;
+                userProfile = null;
+                showLogin();
+            }
+            hideLoading();
+        });
+
+        // Load user profile from database
+        async function loadUserProfile() {
+            try {
+                const snapshot = await database.ref(`users/${currentUser.uid}`).once('value');
+                userProfile = snapshot.val();
+                if (userProfile) {
+                    populateProfileForm();
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+                showError('Error loading profile data');
+            }
+        }
+
+        // Populate profile form with user data
+        function populateProfileForm() {
+            if (userProfile) {
+                document.getElementById('profileName').value = userProfile.name || '';
+                document.getElementById('profileEmail').value = userProfile.email || '';
+                document.getElementById('profileContact').value = userProfile.contact || '';
+                document.getElementById('profileAddress').value = userProfile.address || '';
+            }
+        }
+
+        // Show login page
+        function showLogin() {
+            loginPage.classList.remove('hidden');
+            dashboard.classList.add('hidden');
+        }
+
+        // Show dashboard
+        function showDashboard() {
+            loginPage.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+            showProfileSection(); // Default to profile section
+            loadSubmissions();
+        }
+
+        // Navigation functions
+        function showProfileSection() {
+            profileSection.classList.remove('hidden');
+            submissionsSection.classList.add('hidden');
+            profileBtn.classList.add('text-blue-600', 'bg-blue-50');
+            submissionsBtn.classList.remove('text-blue-600', 'bg-blue-50');
+        }
+
+        function showSubmissionsSection() {
+            // Clear all section displays
+            document.getElementById('profileSection').classList.add('hidden');
+            document.getElementById('submissionsSection').classList.remove('hidden');
+            document.getElementById('completedSection').classList.add('hidden');
+            
+            // Update button states
+            document.getElementById('profileBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('submissionsBtn').classList.add('text-blue-600', 'bg-blue-50');
+            document.getElementById('completedBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            
+            // Clear containers and reload submissions
+            document.getElementById('activeSubmissions').innerHTML = '';
+            document.getElementById('previousSubmissions').innerHTML = '';
+            loadSubmissions();
+        }
+
+        // Load submissions
+        async function loadSubmissions() {
+            try {
+                console.log('Loading submissions...');
+                // Clear both containers first
+                document.getElementById('activeSubmissions').innerHTML = '<div class="text-center py-4">Loading submissions...</div>';
+                document.getElementById('previousSubmissions').innerHTML = '';
+                
+                // Load active submissions
+                const submissionsSnapshot = await database.ref('submissions').once('value');
+                const submissions = submissionsSnapshot.val() || {};
+                console.log('Loaded submissions:', submissions);
+                
+                // Load student submissions
+                const studentSubmissionsSnapshot = await database.ref('studentSubmissions').once('value');
+                const studentSubmissions = studentSubmissionsSnapshot.val() || {};
+                console.log('Loaded student submissions:', studentSubmissions);
+                
+                // Always display both sections when loading
+                displayActiveSubmissions(submissions, studentSubmissions);
+                displayPreviousSubmissions(submissions, studentSubmissions);
+                
+                console.log('Submissions displayed');
+            } catch (error) {
+                console.error('Error loading submissions:', error);
+                document.getElementById('activeSubmissions').innerHTML = `
+                    <div class="text-center py-4 text-red-600">
+                        Error loading submissions: ${error.message}
+                        <button onclick="loadSubmissions()" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg">
+                            Try Again
+                        </button>
+                    </div>
+                `;
+                showError('Error loading submissions: ' + error.message);
+            }
+        }
+
+        // Display active submissions
+        function displayActiveSubmissions(submissions, studentSubmissions) {
+            console.log('Displaying active submissions');
+            const container = document.getElementById('activeSubmissions');
+            container.innerHTML = '';
+            
+            let hasActiveSubmissions = false;
+            
+            if (!submissions || Object.keys(submissions).length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16">
+                        <div class="w-24 h-24 bg-gradient-to-r from-blue-400 to-purple-500 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">No Assignments Available</h3>
+                        <p class="text-gray-600">Check back later for new assignments</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            Object.entries(submissions).forEach(([submissionId, submission]) => {
+                console.log('Processing submission:', submissionId, submission);
+                const userSubmission = studentSubmissions[submissionId]?.[currentUser.uid];
+                if (!userSubmission && submission) { // Check if submission exists and hasn't been submitted
+                    hasActiveSubmissions = true;
+                    const card = createSubmissionCard(submissionId, submission, null);
+                    container.appendChild(card);
+                }
+            });
+            
+            if (!hasActiveSubmissions) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-16">
+                        <div class="w-24 h-24 bg-gradient-to-r from-green-400 to-blue-500 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+                            <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">All Caught Up!</h3>
+                        <p class="text-gray-600">You have completed all your assignments</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display previous submissions
+        function displayPreviousSubmissions(submissions, studentSubmissions) {
+            const container = document.getElementById('previousSubmissions');
+            container.innerHTML = '';
+            
+            let hasPreviousSubmissions = false;
+            
+            Object.entries(submissions).forEach(([submissionId, submission]) => {
+                const userSubmission = studentSubmissions[submissionId]?.[currentUser.uid];
+                if (userSubmission && submission) { // Check if both submission and userSubmission exist
+                    hasPreviousSubmissions = true;
+                    const card = createPreviousSubmissionCard(submissionId, submission, userSubmission);
+                    container.appendChild(card);
+                }
+            });
+            
+            if (!hasPreviousSubmissions) {
+                container.innerHTML = `
+                    <div class="text-center py-16 bg-white/50 backdrop-blur-lg rounded-3xl border border-white/20">
+                        <div class="w-20 h-20 bg-gradient-to-r from-gray-400 to-gray-500 rounded-3xl mx-auto mb-6 flex items-center justify-center">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-medium text-gray-600 mb-2">No Submissions Yet</h3>
+                        <p class="text-gray-500">Your completed assignments will appear here</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Create enhanced submission card
+        function createSubmissionCard(submissionId, submission, userSubmission) {
+            const card = document.createElement('div');
+            card.className = 'bg-white/80 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-xl border border-white/20 p-6 sm:p-8 card-hover slide-up';
+            
+            card.innerHTML = `
+                <div class="card-content">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-orange-400 to-red-500 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg transform transition-transform hover:scale-105">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                        </div>
+                        <span class="status-badge status-pending">Pending</span>
+                    </div>
+                    <div class="mb-6">
+                        <h3 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">${submission.title}</h3>
+                        <p class="text-sm sm:text-base text-gray-600 leading-relaxed">${submission.description}</p>
+                    </div>
+                    
+                    <div class="card-actions">
+                        <div class="relative mb-4">
+                            <input type="url" 
+                                   placeholder="Paste your Google Drive link here..." 
+                                   class="modern-input w-full px-4 py-3 sm:py-4 bg-white/90 border border-gray-200 rounded-xl sm:rounded-2xl focus:outline-none text-gray-900 placeholder-gray-500 pr-12 text-sm sm:text-base"
+                                   id="url-${submissionId}">
+                            <div class="absolute right-4 top-1/2 transform -translate-y-1/2">
+                                <svg class="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                                </svg>
+                            </div>
+                        </div>
+                        <button onclick="submitAssignment('${submissionId}')" 
+                                class="btn-modern w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold transition-all duration-200 flex items-center justify-center space-x-2 text-sm sm:text-base shadow-lg hover:shadow-xl">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <span>Submit Assignment</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Create enhanced previous submission card
+        function createPreviousSubmissionCard(submissionId, submission, userSubmission) {
+            const card = document.createElement('div');
+            card.className = 'bg-white/80 backdrop-blur-lg rounded-2xl sm:rounded-3xl shadow-xl border border-white/20 p-6 sm:p-8 card-hover slide-up';
+            
+            const submittedDate = new Date(userSubmission.submittedAt).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            
+            card.innerHTML = `
+                <div class="card-content">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-green-400 to-blue-500 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg transform transition-transform hover:scale-105">
+                            <svg class="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <span class="status-badge status-completed text-sm">Completed</span>
+                    </div>
+
+                    <div class="mb-6">
+                        <h4 class="text-lg sm:text-xl font-bold text-gray-900 mb-2">${submission.title}</h4>
+                        <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-4">${submission.description}</p>
+                        <div class="flex items-center text-xs sm:text-sm text-gray-500">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>Submitted on ${submittedDate}</span>
+                        </div>
+                    </div>
+
+                    <div class="card-actions">
+                        <div class="grid grid-cols-2 gap-3">
+                            <a href="${userSubmission.directDownload}" target="_blank" 
+                               class="btn-modern px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 text-sm shadow-lg hover:shadow-xl">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                <span>View</span>
+                            </a>
+                            <button onclick="editSubmission('${submissionId}', '${userSubmission.url}')" 
+                                    class="btn-modern px-3 sm:px-4 py-2.5 sm:py-3 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white rounded-xl font-medium transition-all duration-200 flex items-center justify-center space-x-2 text-sm shadow-lg hover:shadow-xl">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                            </svg>
+                            <span>Edit</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Submit assignment
+        window.submitAssignment = async function(submissionId) {
+            const urlInput = document.getElementById(`url-${submissionId}`);
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a Google Drive link');
+                return;
+            }
+            
+            // Add loading state
+            const button = urlInput.parentElement.nextElementSibling;
+            const originalText = button.innerHTML;
+            button.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Submitting...</span>
+            `;
+            button.disabled = true;
+            
+            try {
+                const directDownload = convertGoogleDriveLink(url);
+                
+                await database.ref(`studentSubmissions/${submissionId}/${currentUser.uid}`).set({
+                    url: url,
+                    directDownload: directDownload,
+                    submittedAt: new Date().toISOString()
+                });
+                
+                showSuccess('Assignment submitted successfully!');
+                loadSubmissions(); // Refresh submissions
+            } catch (error) {
+                console.error('Error submitting assignment:', error);
+                showError('Error submitting assignment');
+                
+                // Restore button
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        };
+
+        // Edit submission with enhanced modal
+        window.editSubmission = function(submissionId, currentUrl) {
+            // Create enhanced edit modal
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl w-full max-w-md border border-white/20 overflow-hidden">
+                    <div class="p-8">
+                        <div class="text-center mb-6">
+                            <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-2xl font-bold text-gray-900 mb-2">Edit Submission</h3>
+                            <p class="text-gray-600">Update your Google Drive link</p>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Google Drive Link</label>
+                                <input type="url" value="${currentUrl}" 
+                                       class="modern-input w-full px-4 py-3 bg-white/80 border border-gray-200 rounded-xl focus:outline-none"
+                                       id="editUrl">
+                            </div>
+                            
+                            <div class="flex space-x-4">
+                                <button onclick="updateSubmissionFromModal('${submissionId}')" 
+                                        class="btn-modern flex-1 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all duration-200">
+                                    Update
+                                </button>
+                                <button onclick="closeEditModal()" 
+                                        class="btn-modern flex-1 py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all duration-200">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            modal.style.animation = 'fadeIn 0.3s ease-out';
+        };
+
+        // Close edit modal
+        window.closeEditModal = function() {
+            const modal = document.querySelector('.fixed.inset-0.bg-black\\/50');
+            if (modal) {
+                modal.style.opacity = '0';
+                setTimeout(() => modal.remove(), 300);
+            }
+        };
+
+        // Update submission from modal
+        window.updateSubmissionFromModal = function(submissionId) {
+            const newUrl = document.getElementById('editUrl').value.trim();
+            if (newUrl) {
+                updateSubmission(submissionId, newUrl);
+                closeEditModal();
+            }
+        };
+
+        // Update submission
+        async function updateSubmission(submissionId, newUrl) {
+            try {
+                const directDownload = convertGoogleDriveLink(newUrl);
+                
+                await database.ref(`studentSubmissions/${submissionId}/${currentUser.uid}`).update({
+                    url: newUrl,
+                    directDownload: directDownload,
+                    submittedAt: new Date().toISOString()
+                });
+                
+                showSuccess('Submission updated successfully!');
+                loadSubmissions(); // Refresh submissions
+            } catch (error) {
+                console.error('Error updating submission:', error);
+                showError('Error updating submission');
+            }
+        }
+
+        // Event Listeners
+        function initializeEventListeners() {
+            // Forgot Password Button
+            const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+            if (forgotPasswordBtn) {
+                forgotPasswordBtn.addEventListener('click', () => {
+                    const modal = document.getElementById('forgotPasswordModal');
+                    if (modal) modal.classList.remove('hidden');
+                });
+            }
+
+            // Cancel Forgot Password
+            const cancelForgotPassword = document.getElementById('cancelForgotPassword');
+            if (cancelForgotPassword) {
+                cancelForgotPassword.addEventListener('click', () => {
+                    const modal = document.getElementById('forgotPasswordModal');
+                    const form = document.getElementById('forgotPasswordForm');
+                    if (modal) modal.classList.add('hidden');
+                    if (form) form.reset();
+                });
+            }
+
+            // Track reset attempts
+            let lastResetAttempt = 0;
+            const RESET_COOLDOWN = 60000; // 60 seconds cooldown
+
+            // Forgot Password Form
+            const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+            if (forgotPasswordForm) {
+                forgotPasswordForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('resetEmail')?.value;
+                    if (!email) return;
+
+                    // Check cooldown
+                    const now = Date.now();
+                    if (now - lastResetAttempt < RESET_COOLDOWN) {
+                        const remainingTime = Math.ceil((RESET_COOLDOWN - (now - lastResetAttempt)) / 1000);
+                        showError(`Please wait ${remainingTime} seconds before requesting another reset link`, 'forgotPasswordError');
+                        return;
+                    }
+                    
+                    const submitBtn = e.target.querySelector('button[type="submit"]');
+                    const cancelBtn = document.getElementById('cancelForgotPassword');
+                    const emailInput = document.getElementById('resetEmail');
+                    const originalText = submitBtn.innerHTML;
+
+                    // Disable form elements
+                    submitBtn.innerHTML = `
+                        <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                        <span>Sending...</span>
+                    `;
+                    submitBtn.disabled = true;
+                    cancelBtn.disabled = true;
+                    emailInput.disabled = true;
+                    
+                    try {
+                        await auth.sendPasswordResetEmail(email);
+                        lastResetAttempt = Date.now();
+                        showSuccess('Password reset link sent! Please check your email (including spam folder)');
+                        const modal = document.getElementById('forgotPasswordModal');
+                        if (modal) modal.classList.add('hidden');
+                        if (forgotPasswordForm) forgotPasswordForm.reset();
+                    } catch (error) {
+                        console.error('Error sending password reset email:', error);
+                        showError(error.message, 'forgotPasswordError');
+                    } finally {
+                        // Re-enable all form elements
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                        cancelBtn.disabled = false;
+                        emailInput.disabled = false;
+                    }
+                });
+            }
+        }
+
+        // Initialize event listeners when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', initializeEventListeners);
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Add loading state to button
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Signing In...</span>
+            `;
+            submitBtn.disabled = true;
+            
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                showError("Your Email or Password is wrong Please Try Again");
+                
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Saving...</span>
+            `;
+            submitBtn.disabled = true;
+            
+            try {
+                const updates = {
+                    contact: document.getElementById('profileContact').value,
+                    address: document.getElementById('profileAddress').value
+                };
+                
+                await database.ref(`users/${currentUser.uid}`).update(updates);
+                showSuccess('Profile updated successfully!');
+                
+                // Update local userProfile object
+                userProfile = { ...userProfile, ...updates };
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showError('Error updating profile');
+            } finally {
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('passwordChangeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword !== confirmPassword) {
+                showError('New passwords do not match');
+                return;
+            }
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Updating...</span>
+            `;
+            submitBtn.disabled = true;
+            
+            try {
+                // Re-authenticate user
+                const credential = firebase.auth.EmailAuthProvider.credential(
+                    currentUser.email,
+                    currentPassword
+                );
+                await currentUser.reauthenticateWithCredential(credential);
+                
+                // Update password
+                await currentUser.updatePassword(newPassword);
+                
+                showSuccess('Password updated successfully!');
+                document.getElementById('passwordModal').classList.add('hidden');
+                document.getElementById('passwordChangeForm').reset();
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showError('Error changing password: ' + error.message);
+            } finally {
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Function to show profile section
+        function showProfileSection() {
+            document.getElementById('profileSection').classList.remove('hidden');
+            document.getElementById('submissionsSection').classList.add('hidden');
+            document.getElementById('completedSection').classList.add('hidden');
+            document.getElementById('profileBtn').classList.add('text-blue-600', 'bg-blue-50');
+            document.getElementById('submissionsBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('completedBtn').classList.remove('text-blue-600', 'bg-blue-50');
+        }
+
+        // Function to show submissions section
+        function showSubmissionsSection() {
+            document.getElementById('profileSection').classList.add('hidden');
+            document.getElementById('submissionsSection').classList.remove('hidden');
+            document.getElementById('completedSection').classList.add('hidden');
+            document.getElementById('profileBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            document.getElementById('submissionsBtn').classList.add('text-blue-600', 'bg-blue-50');
+            document.getElementById('completedBtn').classList.remove('text-blue-600', 'bg-blue-50');
+            loadSubmissions(); // Reload submissions when showing this section
+        }
+
+        // Navigation event listeners
+        homeBtn.addEventListener('click', () => showSection('home'));
+        mobileHomeBtn.addEventListener('click', () => showSection('home'));
+        profileBtn.addEventListener('click', () => showSection('profile'));
+        mobileProfileBtn.addEventListener('click', () => showSection('profile'));
+        submissionsBtn.addEventListener('click', () => showSection('submissions'));
+        document.getElementById('completedBtn').addEventListener('click', () => showSection('completed'));
+        
+        logoutBtn.addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        document.getElementById('changePasswordBtn').addEventListener('click', () => {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        });
+
+        document.getElementById('cancelPasswordChange').addEventListener('click', () => {
+            document.getElementById('passwordModal').classList.add('hidden');
+            document.getElementById('passwordChangeForm').reset();
+        });
+
+        // Forgot Password functionality
+        document.getElementById('forgotPasswordBtn').addEventListener('click', () => {
+            document.getElementById('forgotPasswordModal').classList.remove('hidden');
+        });
+
+        document.getElementById('cancelForgotPassword').addEventListener('click', () => {
+            document.getElementById('forgotPasswordModal').classList.add('hidden');
+            document.getElementById('forgotPasswordForm').reset();
+        });
+
+        document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('resetEmail').value;
+            
+            // Add loading state to button
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = `
+                <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                <span>Sending...</span>
+            `;
+            submitBtn.disabled = true;
+            
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showSuccess('Password reset link sent! Please check your email (including spam folder)');
+                document.getElementById('forgotPasswordModal').classList.add('hidden');
+                document.getElementById('forgotPasswordForm').reset();
+            } catch (error) {
+                console.error('Error sending password reset email:', error);
+                showError(error.message, 'forgotPasswordError');
+            } finally {
+                // Restore button
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+
+        // Initialize app
+        showLoading();
+
+        // Mobile menu functionality
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
+                mobileMenu.classList.add('hidden');
+            }
+        });
+
+        // Mobile menu button handlers
+        document.getElementById('mobileProfileBtn').addEventListener('click', () => {
+            showSection('profile');
+            mobileMenu.classList.add('hidden');
+        });
+
+        document.getElementById('mobileSubmissionsBtn').addEventListener('click', () => {
+            showSection('submissions');
+            mobileMenu.classList.add('hidden');
+        });
+
+        document.getElementById('mobileCompletedBtn').addEventListener('click', () => {
+            showSection('completed');
+            mobileMenu.classList.add('hidden');
+        });
+
+        document.getElementById('mobileLogoutBtn').addEventListener('click', () => {
+            auth.signOut();
+            mobileMenu.classList.add('hidden');
+        });
+    </script>
         
         <!-- Footer -->
         <footer class="mt-auto text-center text-sm text-gray-600 py-4 border-t border-gray-100 bg-white">
