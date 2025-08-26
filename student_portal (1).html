@@ -6,7 +6,7 @@
     <title>Enhanced File Upload System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen p-8">
     
@@ -71,6 +71,22 @@
         let selectedFiles = [];
         let initializationInProgress = false;
         
+        // Function to wait for Google Identity Services to load
+        function waitForGoogleIdentity() {
+            return new Promise((resolve) => {
+                if (window.google && google.accounts && google.accounts.oauth2) {
+                    resolve();
+                } else {
+                    const checkGoogleIdentity = setInterval(() => {
+                        if (window.google && google.accounts && google.accounts.oauth2) {
+                            clearInterval(checkGoogleIdentity);
+                            resolve();
+                        }
+                    }, 100);
+                }
+            });
+        }
+
         // Initialize Google API
         async function initializeGapi() {
             if (initializationInProgress) {
@@ -84,7 +100,12 @@
             uploadButton.textContent = 'Loading Google Drive API...';
             
             try {
+                // Wait for Google Identity Services to load
+                console.log('Waiting for Google Identity Services...');
+                await waitForGoogleIdentity();
+                
                 // Initialize the Google Identity Services client
+                console.log('Initializing token client...');
                 const tokenClient = google.accounts.oauth2.initTokenClient({
                     client_id: CLIENT_ID,
                     scope: SCOPES,
