@@ -1388,7 +1388,7 @@
             try {
                 await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
-                showError(error.message);
+                showError("Your Email or Password is wrong Please Try Again");
                 
                 // Restore button
                 submitBtn.innerHTML = originalText;
