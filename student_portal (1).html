@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced File Upload System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen p-8">
+    
+    <!-- File Upload Component -->
+    <div class="max-w-2xl mx-auto bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl border border-white/20 p-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Assignment Submission</h2>
+        
+        <div class="space-y-6">
+            <!-- File Upload Area -->
+            <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition-colors">
+                <div class="space-y-4">
+                    <div class="mx-auto w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                        </svg>
+                    </div>
+                    
+                    <div>
+                        <label for="fileInput" class="cursor-pointer">
+                            <span class="text-lg font-semibold text-gray-900">Choose files to upload</span>
+                            <p class="text-gray-500 mt-1">or drag and drop files here</p>
+                        </label>
+                        <input type="file" id="fileInput" class="hidden" multiple accept=".pdf,.doc,.docx,.txt,.jpg,.png">
+                    </div>
+                    
+                    <p class="text-sm text-gray-400">Supported formats: PDF, DOC, DOCX, TXT, JPG, PNG (Max 10MB each)</p>
+                </div>
+            </div>
+            
+            <!-- File List -->
+            <div id="fileList" class="hidden space-y-3">
+                <h3 class="font-semibold text-gray-900">Selected Files:</h3>
+                <div id="fileListContent"></div>
+            </div>
+            
+            <!-- Upload Progress -->
+            <div id="uploadProgress" class="hidden">
+                <div class="bg-gray-200 rounded-full h-3">
+                    <div id="progressBar" class="bg-blue-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="progressText" class="text-sm text-gray-600 mt-2">Uploading...</p>
+            </div>
+            
+            <!-- Upload Button -->
+            <button id="uploadButton" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                Upload to Google Drive
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Google Drive API Configuration
+        const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+        
+        // Your Google Cloud Project Configuration
+        const CLIENT_ID = '114065652128767782973'; // Replace with your actual client ID
+        const API_KEY = 'AIzaSyCF2ZNpG7xI4cCbillpi4RLm0gyavQzIrQ'; // Replace with your actual API key
+        const FOLDER_ID = '18_SY_Jq3VM61fDkZ15YeQq9P-5qF58K4'; // Replace with your target folder ID
+        
+        let gapi_loaded = false;
+        let selectedFiles = [];
+        let initializationInProgress = false;
+        
+        // Initialize Google API
+        async function initializeGapi() {
+            if (initializationInProgress) {
+                console.log('Initialization already in progress...');
+                return;
+            }
+            
+            initializationInProgress = true;
+            const uploadButton = document.getElementById('uploadButton');
+            uploadButton.disabled = true;
+            uploadButton.textContent = 'Loading Google Drive API...';
+            
+            try {
+                console.log('Loading GAPI auth2...');
+                await new Promise((resolve, reject) => {
+                    gapi.load('auth2', {
+                        callback: resolve,
+                        onerror: reject
+                    });
+                });
+                
+                console.log('Loading GAPI client...');
+                await new Promise((resolve, reject) => {
+                    gapi.load('client', {
+                        callback: resolve,
+                        onerror: reject
+                    });
+                });
+                
+                console.log('Initializing auth...');
+                await gapi.auth2.init({
+                    client_id: CLIENT_ID,
+                });
+                
+                console.log('Initializing client...');
+                await gapi.client.init({
+                    apiKey: API_KEY,
+                    clientId: CLIENT_ID,
+                    discoveryDocs: [DISCOVERY_DOC],
+                    scope: SCOPES
+                });
+                
+                gapi_loaded = true;
+                console.log('GAPI initialization complete!');
+                uploadButton.disabled = false;
+                uploadButton.textContent = 'Upload to Google Drive';
+            } catch (error) {
+                console.error('Failed to initialize GAPI:', error);
+                uploadButton.textContent = 'Error loading Google Drive API';
+                
+                if (error.error === 'idpiframe_initialization_failed') {
+                    alert('Domain not authorized. Please ensure this domain is registered in your Google Cloud Console under "Authorized JavaScript origins".');
+                } else if (error.error === 'popup_blocked_by_browser') {
+                    alert('Google sign-in popup was blocked. Please allow popups for this website and try again.');
+                } else {
+                    alert('Failed to initialize Google Drive API. Please check your API credentials and try again.');
+                }
+                
+                // Log detailed error information for debugging
+                if (error.details) {
+                    console.error('Error details:', error.details);
+                }
+            } finally {
+                initializationInProgress = false;
+            }
+        }
+        
+        // File Selection Handler
+        document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+        
+        function handleFileSelect(event) {
+            selectedFiles = Array.from(event.target.files);
+            displaySelectedFiles();
+        }
+        
+        function displaySelectedFiles() {
+            const fileList = document.getElementById('fileList');
+            const fileListContent = document.getElementById('fileListContent');
+            
+            if (selectedFiles.length > 0) {
+                fileList.classList.remove('hidden');
+                fileListContent.innerHTML = '';
+                
+                selectedFiles.forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+                    fileItem.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <div>
+                                <p class="font-medium text-gray-900">${file.name}</p>
+                                <p class="text-sm text-gray-500">${formatFileSize(file.size)}</p>
+                            </div>
+                        </div>
+                        <button onclick="removeFile(${index})" class="text-red-500 hover:text-red-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    `;
+                    fileListContent.appendChild(fileItem);
+                });
+            } else {
+                fileList.classList.add('hidden');
+            }
+        }
+        
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            displaySelectedFiles();
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Upload Handler
+        document.getElementById('uploadButton').addEventListener('click', async () => {
+            if (selectedFiles.length === 0) {
+                alert('Please select files to upload');
+                return;
+            }
+            
+            if (!gapi_loaded) {
+                if (initializationInProgress) {
+                    alert('Google Drive API is still loading. Please wait a moment and try again.');
+                } else {
+                    console.log('GAPI not loaded, attempting to initialize...');
+                    await initializeGapi();
+                    if (!gapi_loaded) {
+                        return;
+                    }
+                }
+                return;
+            }
+            
+            // Check if user is signed in
+            const authInstance = gapi.auth2.getAuthInstance();
+            if (!authInstance.isSignedIn.get()) {
+                try {
+                    await authInstance.signIn();
+                } catch (error) {
+                    console.error('Sign-in failed:', error);
+                    alert('Sign-in failed. Please try again.');
+                    return;
+                }
+            }
+            
+            await uploadFiles();
+        });
+        
+        async function uploadFiles() {
+            const uploadButton = document.getElementById('uploadButton');
+            const progressContainer = document.getElementById('uploadProgress');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            
+            // Show progress and disable button
+            uploadButton.disabled = true;
+            uploadButton.textContent = 'Uploading...';
+            progressContainer.classList.remove('hidden');
+            
+            const uploadedFiles = [];
+            const totalFiles = selectedFiles.length;
+            
+            for (let i = 0; i < totalFiles; i++) {
+                const file = selectedFiles[i];
+                const progress = ((i / totalFiles) * 100);
+                
+                progressBar.style.width = progress + '%';
+                progressText.textContent = `Uploading ${file.name} (${i + 1} of ${totalFiles})...`;
+                
+                try {
+                    const uploadedFile = await uploadSingleFile(file);
+                    uploadedFiles.push(uploadedFile);
+                } catch (error) {
+                    console.error(`Failed to upload ${file.name}:`, error);
+                    alert(`Failed to upload ${file.name}. Please try again.`);
+                }
+            }
+            
+            // Complete
+            progressBar.style.width = '100%';
+            progressText.textContent = `Successfully uploaded ${uploadedFiles.length} files!`;
+            
+            // Reset after delay
+            setTimeout(() => {
+                progressContainer.classList.add('hidden');
+                uploadButton.disabled = false;
+                uploadButton.textContent = 'Upload to Google Drive';
+                selectedFiles = [];
+                document.getElementById('fileInput').value = '';
+                displaySelectedFiles();
+            }, 2000);
+            
+            // Save upload records to Firebase (if you want to track uploads)
+            await saveUploadRecord(uploadedFiles);
+        }
+        
+        async function uploadSingleFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const fileContent = e.target.result;
+                    
+                    try {
+                        const response = await gapi.client.request({
+                            path: 'https://www.googleapis.com/upload/drive/v3/files',
+                            method: 'POST',
+                            params: {
+                                uploadType: 'multipart'
+                            },
+                            headers: {
+                                'Content-Type': 'multipart/related; boundary="foo_bar_baz"'
+                            },
+                            body: createMultipartBody(file, fileContent)
+                        });
+                        
+                        resolve(response.result);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
+        function createMultipartBody(file, data) {
+            const delimiter = 'foo_bar_baz';
+            const close_delim = "\r\n--" + delimiter + "--";
+            
+            const metadata = {
+                'name': file.name,
+                'parents': [FOLDER_ID] // Upload to specific folder
+            };
+            
+            const multipartRequestBody =
+                delimiter + '\r\n' +
+                'Content-Type: application/json\r\n\r\n' +
+                JSON.stringify(metadata) + '\r\n' +
+                '--' + delimiter + '\r\n' +
+                'Content-Type: ' + file.type + '\r\n\r\n';
+                
+            const request = new Uint8Array(multipartRequestBody.length + data.byteLength + close_delim.length);
+            const encoder = new TextEncoder();
+            
+            let offset = 0;
+            request.set(encoder.encode(multipartRequestBody), offset);
+            offset += multipartRequestBody.length;
+            
+            request.set(new Uint8Array(data), offset);
+            offset += data.byteLength;
+            
+            request.set(encoder.encode(close_delim), offset);
+            
+            return request;
+        }
+        
+        async function saveUploadRecord(uploadedFiles) {
+            // This would save the upload record to your Firebase database
+            // You can integrate this with your existing Firebase setup
+            try {
+                const uploadRecord = {
+                    studentId: 'CURRENT_STUDENT_ID', // Get from your auth system
+                    files: uploadedFiles.map(file => ({
+                        fileId: file.id,
+                        fileName: file.name,
+                        uploadedAt: new Date().toISOString()
+                    })),
+                    uploadedAt: new Date().toISOString()
+                };
+                
+                // Save to Firebase
+                // await database.ref('fileUploads').push(uploadRecord);
+                console.log('Upload record:', uploadRecord);
+            } catch (error) {
+                console.error('Error saving upload record:', error);
+            }
+        }
+        
+        // Drag and Drop functionality
+        const dropZone = document.querySelector('.border-dashed');
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-400', 'bg-blue-50');
+        });
+        
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+        });
+        
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+            
+            const files = Array.from(e.dataTransfer.files);
+            selectedFiles = files;
+            displaySelectedFiles();
+        });
+        
+        // Initialize when page loads
+        window.addEventListener('load', initializeGapi);
+    </script>
+</body>
+</html>
