@@ -1,12 +1,12 @@
 // MCQ Data Structure
 const mcqData = {
     msword: {
-        "Paper 1": [
+        "ප්‍රශ්න පත්‍ර අංක 01": [
             {
-                question: "Which tab contains the Font formatting options in MS Word?",
+                question: "අක්ෂර ආකෘතිකරණය සඳහා ඔබ තෝරා ගත යුතු TAB ය කුමක්ද?",
                 options: ["Home", "Insert", "Page Layout", "View"],
-                answer: 3,
-                explanation: "The Font formatting options are located in the Home tab of MS Word."
+                answer: 0,
+                explanation: "අක්ෂර ආකෘතිකරණ සඳහා විකල්පය MS Word හි Home Tab හී පිහිටා ඇත."
             },
             {
                 question: "What is the keyboard shortcut to save a document in MS Word?",
@@ -33,7 +33,7 @@ const mcqData = {
                 explanation: "Print Layout view allows you to see multiple pages."
             }
         ],
-        "Paper 2": [
+        "ප්‍රශ්න පත්‍ර අංක 02": [
             {
                 question: "Which feature allows you to combine multiple documents into one?",
                 options: ["Mail Merge", "Quick Parts", "Smart Art", "Document Map"],
