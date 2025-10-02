@@ -9,10 +9,10 @@ const mcqData = {
                 explanation: "අක්ෂර ආකෘතිකරණ සඳහා විකල්පය MS Word හි Home Tab හී පිහිටා ඇත."
             },
             {
-                question: "What is the keyboard shortcut to save a document in MS Word?",
-                options: ["Ctrl + S", "Ctrl + P", "Ctrl + O", "Ctrl + N"],
-                answer: 0,
-                explanation: "Ctrl + S is the keyboard shortcut to save a document in MS Word."
+                question: "MS Word හි ලේඛනයක් සුරැකීමට යතුරුපුවරු කෙටිමඟ කුමක්ද?",
+                options: [ "Ctrl + P", "Ctrl + S", "Ctrl + O", "Ctrl + N"],
+                answer: 2,
+                explanation: "Ctrl + S යනු MS Word හි ලේඛනයක් සුරැකීමට ඇති යතුරුපුවරු කෙටිමඟයි."
             },
             {
                 question: "Which option is used to insert a page break?",
