@@ -364,6 +364,9 @@
                     <a href="#" class="nav-link text-sm font-medium text-white hover:text-purple-300" onclick="showSection('Papers')">
                         <i class="fas fa-file-alt mr-2"></i>Papers
                     </a>
+                    <a href="#" class="nav-link text-sm font-medium text-white hover:text-purple-300" onclick="showSection('mcq')">
+                        <i class="fas fa-question-circle mr-2"></i>MCQ
+                    </a>
                     <a href="#" class="nav-link text-sm font-medium text-white hover:text-purple-300" onclick="showSection('video')">
                         <i class="fas fa-video mr-2"></i>Video
                     </a>
@@ -422,6 +425,10 @@
                         <a href="#" class="mobile-nav-link" onclick="showSection('Papers')">
                             <i class="fas fa-file-alt"></i>
                             Papers
+                        </a>
+                        <a href="#" class="mobile-nav-link" onclick="showSection('mcq')">
+                            <i class="fas fa-question-circle"></i>
+                            MCQ
                         </a>
                         <a href="#" class="mobile-nav-link" onclick="showSection('video')">
                             <i class="fas fa-video"></i>
@@ -642,6 +649,8 @@
             </div>
         </div>
     </div>
+    <script src="mcq-data.js"></script>
+    <script src="mcq-handler.js"></script>
     <script src="video-card-generator.js"></script>
     <script src="main.js"></script>
 
@@ -753,6 +762,92 @@
                 <i class="fas fa-tasks text-6xl text-gray-600 mb-4"></i>
                 <h3 class="text-2xl font-semibold text-gray-400 mb-2">No assignments found</h3>
                 <p class="text-gray-500">Try adjusting your search terms</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MCQ Section -->
+    <div id="mcqSection" class="section hidden pt-24">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold gradient-text mb-4">MCQ Practice</h1>
+                <p class="text-xl text-gray-300">Test your knowledge with our comprehensive multiple choice questions</p>
+            </div>
+
+            <!-- Search and Filter for MCQ -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 mb-8 border border-white/20">
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="relative flex-1">
+                        <select id="mcqSubject" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-white appearance-none cursor-pointer">
+                            <option value="">Select Subject</option>
+                            <option value="msword">MS Word</option>
+                            <option value="msexcel">MS Excel</option>
+                            <option value="msaccess">MS Access</option>
+                            <option value="mspowerpoint">MS PowerPoint</option>
+                            <option value="photoshop">Photoshop</option>
+                        </select>
+                        <i class="fas fa-chevron-down filter-chevron"></i>
+                    </div>
+                    <div class="relative flex-1">
+                        <select id="mcqPaper" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-white appearance-none cursor-pointer" disabled>
+                            <option value="">Select Paper</option>
+                        </select>
+                        <i class="fas fa-chevron-down filter-chevron"></i>
+                    </div>
+                    <button id="startMcq" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl font-semibold hover:opacity-90 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        Start MCQ
+                    </button>
+                </div>
+            </div>
+
+            <!-- MCQ Container -->
+            <div id="mcqContainer" class="hidden">
+                <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20 mb-8">
+                    <div id="mcqProgress" class="flex items-center justify-between mb-6">
+                        <span class="text-white font-semibold">Question <span id="currentQuestion">1</span> of <span id="totalQuestions">10</span></span>
+                        <span class="text-white font-semibold">Time: <span id="mcqTimer">00:00</span></span>
+                    </div>
+                    <div id="questionText" class="text-xl text-white mb-6"></div>
+                    <div id="options" class="space-y-4"></div>
+                    <div class="flex justify-between mt-8">
+                        <button id="prevQuestion" class="px-6 py-2 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all duration-200">
+                            <i class="fas fa-arrow-left mr-2"></i>Previous
+                        </button>
+                        <button id="nextQuestion" class="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:opacity-90 transition-all duration-200">
+                            Next<i class="fas fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                <button id="submitMcq" class="w-full px-8 py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white rounded-2xl font-semibold hover:opacity-90 transition-all duration-200 hidden">
+                    Submit MCQ
+                </button>
+            </div>
+
+            <!-- Results Container -->
+            <div id="resultsContainer" class="hidden">
+                <div class="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-8 border border-white/20">
+                    <h2 class="text-3xl font-bold text-white mb-6 text-center">MCQ Results</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-white/10 rounded-2xl p-6 text-center">
+                            <h3 class="text-lg text-gray-300 mb-2">Total Questions</h3>
+                            <p id="resultTotal" class="text-3xl font-bold text-white">0</p>
+                        </div>
+                        <div class="bg-white/10 rounded-2xl p-6 text-center">
+                            <h3 class="text-lg text-gray-300 mb-2">Correct Answers</h3>
+                            <p id="resultCorrect" class="text-3xl font-bold text-green-500">0</p>
+                        </div>
+                        <div class="bg-white/10 rounded-2xl p-6 text-center">
+                            <h3 class="text-lg text-gray-300 mb-2">Time Taken</h3>
+                            <p id="resultTime" class="text-3xl font-bold text-white">00:00</p>
+                        </div>
+                    </div>
+                    <div id="answersReview" class="space-y-4"></div>
+                    <div class="flex justify-center mt-8">
+                        <button id="tryAnotherMcq" class="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl font-semibold hover:opacity-90 transition-all duration-200">
+                            Try Another MCQ
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
